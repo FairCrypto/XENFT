@@ -26,8 +26,8 @@ module.exports = {
     goerli: {
       provider: () => new HDWalletProvider({
         privateKeys: privKeysRinkeby,
-        //providerOrUrl: `https://:${infuraSecret}@goerli.infura.io/v3/${infuraKey}`,
-        providerOrUrl: `wss://:${infuraSecret}@goerli.infura.io/ws/v3/${infuraKey}`,
+        providerOrUrl: `https://:${infuraSecret}@goerli.infura.io/v3/${infuraKey}`,
+        //providerOrUrl: `wss://:${infuraSecret}@goerli.infura.io/ws/v3/${infuraKey}`,
         pollingInterval: 56000
       }),
       network_id: 5,
