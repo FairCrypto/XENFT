@@ -1,5 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base { fill: white; font-family: arial; font-size: 20px; }</style><rect width="100%" height="500%" fill="#222222" /><line x1="120" y1="50" x2="220" y2="180" stroke="white" /><line x1="220" y1="50" x2="120" y2="180" stroke="white" /><text x="50%" y="65%" class="base" dominant-baseline="middle" text-anchor="middle">XEN Crypto</text><text x="50%" y="81%" class="base" dominant-baseline="middle" text-anchor="middle">Bulk Mint #
+<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base {fill: white;font-family:arial;font-size:20px;} .meta {font-size:16px;}</style><rect width="100%" height="500%" fill="#222222" /><line x1="120" y1="50" x2="220" y2="180" stroke="white" /><line x1="220" y1="50" x2="120" y2="180" stroke="white" /><text x="50%" y="65%" class="base" dominant-baseline="middle" text-anchor="middle">XEN Crypto</text><text x="50%" y="75%" class="base meta" dominant-baseline="middle" text-anchor="middle">Bulk Mint #
     1
-</text><text x="50%" y="89%" class="base" dominant-baseline="middle" text-anchor="middle">Term:
+</text><text x="50%" y="80%" class="base meta" dominant-baseline="middle" text-anchor="middle">cRank:
     30
-d</text></svg>
+</text><text x="50%" y="85%" class="base meta" dominant-baseline="middle" text-anchor="middle">Term:
+    30
+d</text><text x="50%" y="90%" class="base meta" dominant-baseline="middle" text-anchor="middle">Maturity:
+    30
+</text></svg>
