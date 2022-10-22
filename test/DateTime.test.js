@@ -5,27 +5,29 @@ require('dotenv').config()
 // const truffleAssert = require('truffle-assertions')
 const timeMachine = require('ganache-time-traveler');
 
-const XENCrypto = artifacts.require("XENCrypto")
-const XENMinter = artifacts.require("XENMinter")
+const DateTime = artifacts.require("DateTime")
+const XENTorrent = artifacts.require("XENTorrent")
 
 // const { bn2hexStr, toBigInt, maxBigInt, etherToWei } = require('../src/utils.js')
 
-contract("XEN Minter", async accounts => {
+contract("XEN Torrent (DateTime library)", async accounts => {
 
-    let token;
+    let dateTime;
     let minter;
 
     before(async () => {
         try {
-            token = await XENCrypto.deployed();
-            minter = await XENMinter.deployed();
+            dateTime = await DateTime.deployed();
+            minter = await XENTorrent.deployed();
         } catch (e) {
             console.error(e)
         }
     })
 
-    it("Date Time", async () => {
-        // console.log(await minter.month(2))
+    it("DateTime.asString should convert unix timestamp to Date-Time string", async () => {
+        const dateTimeStr = await dateTime.asString(Math.floor((Date.now()  / 1_000)) + 20*60);
+        assert.ok(new Date(dateTimeStr))
+        console.log(dateTimeStr, new Date(dateTimeStr))
     })
 
 })

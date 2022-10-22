@@ -5,38 +5,39 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import '@faircrypto/xen-crypto/contracts/XENCrypto.sol';
-import './DateTime.sol';
+import './libs/SVG.sol';
+import "./interfaces/IXENTorrent.sol";
+import "./interfaces/IXENProxying.sol";
 
 /*
     NFT props:
     - number of virtual minters
     - MintInfo (term, cRank, maturityDate) for each virtual minter
  */
-contract XENMinter is ERC721("XEN Torrent", "XENTORR") {
+contract XENTorrent is IXENTorrent, IXENProxying, ERC721("XEN Torrent", "XENTORR") {
 
-    using DateTime for uint256;
+    //using DateTime for uint256;
     using Strings for uint256;
 
+    // essential info about Torrent Mint Ops
     struct MintInfo {
         uint256 term;
         uint256 rank;
         uint256 maturityTs;
     }
 
-    string constant private _p1 = '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"><style>.base {fill: white;font-family:arial;font-size:20px;} .meta {font-size:16px;}</style><rect width="100%" height="500%" fill="#222222" /><line x1="120" y1="50" x2="220" y2="180" stroke="white" /><line x1="220" y1="50" x2="120" y2="180" stroke="white" /><text x="50%" y="65%" class="base" dominant-baseline="middle" text-anchor="middle">XEN Crypto</text><text x="50%" y="75%" class="base meta" dominant-baseline="middle" text-anchor="middle">Bulk Mint #';
-    string constant private _p2 = '</text><text x="50%" y="80%" class="base meta" dominant-baseline="middle" text-anchor="middle">cRank: ';
-    string constant private _p3 = '</text><text x="50%" y="85%" class="base meta" dominant-baseline="middle" text-anchor="middle">Term: ';
-    string constant private _p4 = 'd</text><text x="50%" y="90%" class="base meta" dominant-baseline="middle" text-anchor="middle">Maturity: ';
-    string constant private _p5 = '</text></svg>';
+    uint256[] public COLORS = [206, 20, 331, 230];
+    uint256[] public ANGLES = [45, 135, 225, 315];
 
     // original contract marking to distinguish from proxy copies
     address private immutable _original;
+    // ever increasing counter for NFT tokenIds, also used as salt for proxies' spinning
     uint256 private _tokenIdCounter = 1;
     // pointer to XEN Crypto contract
     XENCrypto immutable public xenCrypto;
-    // mapping: NFT ID => count of virtual minters
+    // mapping: NFT tokenId => count of virtual minters
     mapping(uint256 => uint256) public minterInfo;
-    // mapping: NFT ID => mint term (for metadata)
+    // mapping: NFT tokenId => MintInfo (used in tokenURI generation)
     mapping(uint256 => MintInfo) public mints;
 
     constructor(address xenCrypto_) {
@@ -45,26 +46,25 @@ contract XENMinter is ERC721("XEN Torrent", "XENTORR") {
         xenCrypto = XENCrypto(xenCrypto_);
     }
 
-    function _cRankRange(uint256 tokenId) private view returns (bytes memory) {
-        return abi.encodePacked(
-            mints[tokenId].rank.toString(),
-            '..',
-            (mints[tokenId].rank + minterInfo[tokenId] - 1).toString()
-        );
+    /**
+        @dev private helper to generate SVG image based on Torrent params
+     */
+    function _svgData(uint256 tokenId) private view returns (bytes memory) {
+        SVG.SvgParams memory params = SVG.SvgParams({
+            symbol: "XEN",
+            xenAddress: address(0),
+            tokenId: tokenId,
+            term: mints[tokenId].term,
+            rank: mints[tokenId].rank,
+            count: minterInfo[tokenId],
+            maturityTs: mints[tokenId].maturityTs
+        });
+        return SVG.image(params, COLORS, ANGLES);
     }
 
-    function _svgData(uint256 tokenId) private view returns (bytes memory) {
-        return abi.encodePacked(
-            _p1,
-            tokenId.toString(),
-            _p2,
-            _cRankRange(tokenId),
-            _p3,
-            mints[tokenId].term.toString(),
-            _p4,
-            mints[tokenId].maturityTs.asString(),
-            _p5
-        );
+    // TODO: remove after testing
+    function genSVG(uint256 tokenId) public view returns (string memory) {
+        return string(_svgData(tokenId));
     }
 
     /**
@@ -79,7 +79,7 @@ contract XENMinter is ERC721("XEN Torrent", "XENTORR") {
             '"description": "XEN Mass Minting Ops",',
             '"image": "',
                 'data:image/svg+xml;base64,',
-                Base64.encode(bytes(_svgData(tokenId))),
+                Base64.encode(_svgData(tokenId)),
                 '"',
             '}'
         );
@@ -91,6 +91,9 @@ contract XENMinter is ERC721("XEN Torrent", "XENTORR") {
         );
     }
 
+    /**
+        @dev function callable only in proxy contracts from the original one => XENCrypto.claimRank(term)
+     */
     function callClaimRank(uint256 term) external {
         require(msg.sender == _original, 'unauthorized');
         bytes memory callData = abi.encodeWithSignature("claimRank(uint256)", term);
@@ -98,6 +101,9 @@ contract XENMinter is ERC721("XEN Torrent", "XENTORR") {
         require(success, 'call failed');
     }
 
+    /**
+        @dev function callable only in proxy contracts from the original one => XENCrypto.claimMintRewardAndShare()
+     */
     function callClaimMintReward(address to) external {
         require(msg.sender == _original, 'unauthorized');
         bytes memory callData = abi.encodeWithSignature("claimMintRewardAndShare(address,uint256)", to, uint256(100));
@@ -105,7 +111,18 @@ contract XENMinter is ERC721("XEN Torrent", "XENTORR") {
         require(success, 'call failed');
     }
 
-    function bulkClaimRank0(uint256 count, uint256 term) external {
+    /**
+        @dev function callable only in proxy contracts from the original one => destroys the proxy contract
+     */
+    function powerDown() external {
+        require(msg.sender == _original, 'unauthorized');
+        selfdestruct(payable(address(0)));
+    }
+
+    /**
+        @dev main torrent interface. initiates Bulk Mint (Torrent) Operation
+     */
+    function bulkClaimRank(uint256 count, uint256 term) public {
         bytes memory bytecode = bytes.concat(
             bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
             bytes20(address(this)),
@@ -146,46 +163,20 @@ contract XENMinter is ERC721("XEN Torrent", "XENTORR") {
         _mint(msg.sender, _tokenIdCounter++);
     }
 
-    /*
-    function bulkClaimRank(uint256 count, uint256 term, bytes calldata salt_) external {
-        bytes memory bytecode = bytes.concat(
-            bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
-            bytes20(address(this)),
-            bytes15(0x5af43d82803e903d91602b57fd5bf3)
-        );
-        uint256 i = 1;
-        uint256 end = count + i;
-        bytes memory callData = abi.encodeWithSignature("callClaimRank(uint256)", term);
-        for (i; i < end; i++) {
-            bytes32 salt = keccak256(abi.encodePacked(salt_, i, msg.sender));
-            bool succeeded;
-            bytes32 hash = keccak256(abi.encodePacked(hex'ff', address(this), salt, keccak256(bytecode)));
-            address proxy = address(uint160(uint(hash)));
-            assembly {
-                succeeded := call(
-                    gas(),
-                    proxy,
-                    0,
-                    add(callData, 0x20),
-                    mload(callData),
-                    0,
-                    0
-                )
-            }
-        }
-    }
-    */
-
+    /**
+        @dev main torrent interface. initiates Mint Reward claim and collection and terminates Torrent Operation
+     */
     function bulkClaimMintReward(uint256 tokenId, address to) external {
+        require(ownerOf(tokenId) == msg.sender, "ERC721: incorrect owner");
+        require(to != address(0), "illegal address");
         bytes memory bytecode = bytes.concat(
             bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
             bytes20(address(this)),
             bytes15(0x5af43d82803e903d91602b57fd5bf3)
         );
-        require(ownerOf(tokenId) == msg.sender, "ERC721: incorrect owner");
         uint256 end = minterInfo[tokenId] + 1;
         bytes memory callData = abi.encodeWithSignature("callClaimMintReward(address)", to);
-        bool result = true;
+        bytes memory callData1 = abi.encodeWithSignature("powerDown()");
         for (uint i = 1; i < end; i++) {
             bytes32 salt = keccak256(abi.encodePacked(i, tokenId));
             bool succeeded;
@@ -202,9 +193,20 @@ contract XENMinter is ERC721("XEN Torrent", "XENTORR") {
                     0
                 )
             }
-            result = result && succeeded;
+            require(succeeded, "Error while claiming rewards");
+            assembly {
+                succeeded := call(
+                    gas(),
+                    proxy,
+                    0,
+                    add(callData1, 0x20),
+                    mload(callData1),
+                    0,
+                    0
+                )
+            }
+            require(succeeded, "Error while powering down");
         }
-        require(result, "Error while claiming rewards");
         delete minterInfo[tokenId];
         delete mints[tokenId];
         _burn(tokenId);

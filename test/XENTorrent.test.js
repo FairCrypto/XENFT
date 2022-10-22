@@ -6,11 +6,11 @@ require('dotenv').config()
 const timeMachine = require('ganache-time-traveler');
 
 const XENCrypto = artifacts.require("XENCrypto")
-const XENMinter = artifacts.require("XENMinter")
+const XENTorrent = artifacts.require("XENTorrent")
 
 // const { bn2hexStr, toBigInt, maxBigInt, etherToWei } = require('../src/utils.js')
 
-contract("XEN Minter", async accounts => {
+contract("XEN Torrent", async accounts => {
 
     let token;
     let minter;
@@ -20,12 +20,11 @@ contract("XEN Minter", async accounts => {
     let tokenId;
     const term = 10;
     const count = 100;
-    // const salt = '0x123123';
 
     before(async () => {
         try {
             token = await XENCrypto.deployed();
-            minter = await XENMinter.deployed();
+            minter = await XENTorrent.deployed();
             xenCryptoAddress = token.address;
         } catch (e) {
             console.error(e)
@@ -47,12 +46,12 @@ contract("XEN Minter", async accounts => {
     })
 
     it("Should reject bulkClaimRank transaction with incorrect count OR term", async () => {
-        assert.rejects(() => minter.bulkClaimRank0(0, term, { from: accounts[0] }));
-        assert.rejects(() => minter.bulkClaimRank0(count, 0, { from: accounts[0] }));
+        assert.rejects(() => minter.bulkClaimRank(0, term, { from: accounts[0] }));
+        assert.rejects(() => minter.bulkClaimRank(count, 0, { from: accounts[0] }));
     })
 
     it("Should perform bulkClaimRank operation", async () => {
-        const res = await minter.bulkClaimRank0(count, term, { from: accounts[0] });
+        const res = await minter.bulkClaimRank(count, term, { from: accounts[0] });
         assert.ok(res.receipt.rawLogs.length === count + 1);
         console.log('      gas used', res.receipt.gasUsed.toLocaleString());
         res.receipt.rawLogs.slice(0, count).forEach(log => {
@@ -64,6 +63,10 @@ contract("XEN Minter", async accounts => {
 
     it("Should verify that XEN Crypto has increased Global Rank by the number of virtual minters", async () => {
         assert.ok(await token.activeMinters().then(_ => _.toNumber()) === count);
+    })
+
+   it("Should generate SVG", async () => {
+        console.log(await minter.genSVG(1));
     })
 
     it("Should verify that mint initiator possesses NFT by its tokenId", async () => {
@@ -94,7 +97,7 @@ contract("XEN Minter", async accounts => {
 
     it("Should perform another bulkClaimRank operation", async () => {
         const newVirtualMinters = [];
-        const res = await minter.bulkClaimRank0(count, term + 20, { from: accounts[1] });
+        const res = await minter.bulkClaimRank(count, term + 20, { from: accounts[1] });
         assert.ok(res.receipt.rawLogs.length === count + 1);
         console.log('      gas used', res.receipt.gasUsed.toLocaleString());
         res.receipt.rawLogs.slice(0, count).forEach(log => {

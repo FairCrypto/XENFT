@@ -10,6 +10,9 @@ library DateTime {
 
     bytes constant public months = bytes("JanFebMarAprMayJunJulAugSepOctNovDec");
 
+    /**
+     *   @dev returns month as short (3-letter) string
+     */
     function monthAsString(uint256 idx) internal pure returns (string memory) {
         require(idx > 0, 'bad idx');
         bytes memory str = new bytes(3);
@@ -18,6 +21,15 @@ library DateTime {
         str[1] = bytes1(months[offset + 1]);
         str[2] = bytes1(months[offset + 2]);
         return string(str);
+    }
+
+    /**
+     *   @dev returns string representation of number left-padded for 2 symbols
+     */
+    function asPaddedString(uint256 n) internal pure returns (string memory) {
+        if (n == 0) return '00';
+        if (n < 10) return string.concat('0', n.toString());
+        return n.toString();
     }
 
     /**
@@ -33,9 +45,9 @@ library DateTime {
             ', ',
             year.toString(),
             ' ',
-            hour.toString(),
+            asPaddedString(hour),
             ':',
-            minute.toString(),
+            asPaddedString(minute),
             ' UTC'
         ));
     }
