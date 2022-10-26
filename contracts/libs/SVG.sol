@@ -3,6 +3,7 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "./DateTime.sol";
+import "./Quotes.sol";
 
 library SVG {
 
@@ -14,18 +15,16 @@ library SVG {
         uint256 rank;
         uint256 count;
         uint256 maturityTs;
+        uint256 amp;
+        uint256 eaa;
+        bool redeemed;
     }
 
     using DateTime for uint256;
     using Strings for uint256;
     using Strings for address;
 
-    string constant STYLE = '<style>.base {fill: #ededed;font-family:Montserrat,arial,sans-serif;font-size:30px;font-weight:400;} .title {font-weight:100;}.meta {font-size:12px;}.small {font-size:8px;}.quote {font-size:10px;}.animated {animation: dash 0.3s linear infinite;}@keyframes dash {from {stroke-dashoffset: 0;} to {stroke-dashoffset: 8;} }</style>';
-
-    function getQuote(uint256 idx) pure internal returns (bytes memory) {
-        if (idx == 0) return unicode"“If you realize you have enough, you are truly rich.” ― Lao Tzu";
-        return '';
-    }
+    string constant STYLE = '<style>.base {fill: #ededed;font-family:Montserrat,arial,sans-serif;font-size:30px;font-weight:400;} .title {}.meta {font-size:12px;}.small {font-size:8px;} }</style>';
 
     function gradient(uint256 color, uint256 angle, uint256 id) pure internal returns (bytes memory) {
         return abi.encodePacked(
@@ -56,7 +55,7 @@ library SVG {
     }
 
     function animation() pure internal returns (string memory) {
-        return '<rect width="94%" height="96%" fill="transparent" rx="10px" ry="10px" stroke-linejoin="round" x="3%" y="2%" stroke-dasharray="1,6" stroke="white" class="animated"/>';
+        return '<rect width="94%" height="96%" fill="transparent" rx="10px" ry="10px" stroke-linejoin="round" x="3%" y="2%" stroke-dasharray="1,6" stroke="white"/>';
     }
 
     function g(uint256[] memory colors) pure internal returns (bytes memory) {
@@ -84,39 +83,71 @@ library SVG {
         );
     }
 
-    function meta(uint256 tokenId, uint256 term, uint256 rank, uint256 count, uint256 maturityTs) pure internal returns (bytes memory) {
+    function rankAndCount(uint256 rank, uint256 count) pure internal returns (bytes memory) {
+        return abi.encodePacked(
+            rank.toString(),
+            '..',
+            (rank + count - 1).toString(),
+            ' (',
+            count.toString()
+        );
+    }
 
+    function meta1(uint256 tokenId, uint256 term, uint256 rank, uint256 count) pure internal returns (bytes memory) {
         bytes memory part1 = abi.encodePacked(
-            '<text x="50%" y="55%" class="base title" dominant-baseline="middle" text-anchor="middle">XEN CRYPTO</text><text x="18%" y="70%" class="base meta" dominant-baseline="middle" >#',
+            '<text x="50%" y="50%" class="base title" dominant-baseline="middle" text-anchor="middle">XEN CRYPTO</text>'
+            '<text x="18%" y="63%" class="base meta" dominant-baseline="middle" >#',
             tokenId.toString(),
-            '</text><text x="18%" y="75%" class="base meta" dominant-baseline="middle" >Term: ',
+            '</text><text x="18%" y="68%" class="base meta" dominant-baseline="middle" >Term: ',
             term.toString()
         );
         bytes memory part2 = abi.encodePacked(
-            ' day(s)</text><text x="18%" y="80%" class="base meta" dominant-baseline="middle" >cRank: ',
-            rank.toString(),
-            '..',
-            (rank + count - 1).toString()
+            ' day(s)</text>'
+            '<text x="18%" y="73%" class="base meta" dominant-baseline="middle" >cRank: ',
+            rankAndCount(rank, count),
+            ' VMUs)</text>'
         );
+        return abi.encodePacked(part1, part2);
+    }
+
+    function meta2(uint256 maturityTs, uint256 amp, uint256 eaa) pure internal returns (bytes memory) {
         bytes memory part3 = abi.encodePacked(
-            ' (',
-            count.toString(),
-            ')</text><text x="18%" y="85%" class="base meta" dominant-baseline="middle" >Maturity: ',
+            '<text x="18%" y="78%" class="base meta" dominant-baseline="middle" >AMP: ',
+            amp.toString(),
+            '</text>'
+            '<text x="18%" y="83%" class="base meta" dominant-baseline="middle" >EAA: ',
+             (eaa / 10).toString()
+        );
+        bytes memory part4 = abi.encodePacked(
+            '%</text>'
+            '<text x="18%" y="88%" class="base meta" dominant-baseline="middle" >Maturity: ',
             maturityTs.asString(),
             '</text>'
         );
-        return abi.encodePacked(part1, part2, part3);
+        return abi.encodePacked(part3, part4);
     }
 
-    function quote() pure internal returns (bytes memory) {
+    function quote(uint256 idx) pure internal returns (bytes memory) {
         return abi.encodePacked(
-            '<text x="50%" y="95%" class="base quote" dominant-baseline="middle" text-anchor="middle">',
-            getQuote(0),
+            '<text x="50%" y="95%" class="base small" dominant-baseline="middle" text-anchor="middle">',
+            Quotes.getQuote(Quotes.QUOTES, idx),
             '</text>'
         );
     }
 
-    function image(SvgParams memory params, uint256[] memory colors, uint256[] memory angles) pure internal returns (bytes memory) {
+    function stamp(bool redeemed) pure internal returns (bytes memory) {
+        if (!redeemed) return '';
+        return abi.encodePacked(
+            '<rect x="50%" y="77.5%" width="100" height="40" stroke="black" stroke-width="1" fill="none" rx="5px" ry="5px" transform="translate(-50,-20) rotate(-20,0,400)" />',
+            '<text x="50%" y="77.5%" stroke="black" class="base meta" dominant-baseline="middle" text-anchor="middle" transform="translate(0,0) rotate(-20,-45,380)" >Redeemed</text>'
+        );
+    }
+
+    function image(SvgParams memory params, uint256[] memory colors, uint256[] memory angles, uint256 idx)
+        pure
+        internal
+        returns (bytes memory)
+    {
         bytes memory graphics = abi.encodePacked(
             defs(colors, angles),
             STYLE,
@@ -125,11 +156,13 @@ library SVG {
         );
         bytes memory metadata = abi.encodePacked(
             contractData(params.symbol, params.xenAddress),
-            meta(params.tokenId, params.term, params.rank, params.count, params.maturityTs),
-            quote()
+            meta1(params.tokenId, params.term, params.rank, params.count),
+            meta2(params.maturityTs, params.amp, params.eaa),
+            quote(idx),
+            stamp(params.redeemed)
         );
         return abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 525">',
+            '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 566">',
             graphics,
             metadata,
             '</svg>'

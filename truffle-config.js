@@ -33,8 +33,11 @@ module.exports = {
       network_id: 5,
       confirmations: 2,
       timeoutBlocks: 100,
+      gas: 19_000_000,
+      maxPriorityFeePerGas: 2_500_000_000,
+      maxFeePerGas: 23_000_000_000,
       skipDryRun: true,
-      from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      // from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
       networkCheckTimeout: 999999
     },
     bsc_testnet: {
