@@ -140,9 +140,9 @@ contract XENTorrent is IXENTorrent, IXENProxying, ERC721("XEN Torrent", "XENTORR
     }
 
     // TODO: remove after testing
-    function genSVG(uint256 tokenId) public view returns (string memory) {
-        return string(_svgData(tokenId));
-    }
+    //function genSVG(uint256 tokenId) public view returns (string memory) {
+    //    return string(_svgData(tokenId));
+    //}
 
     function _attributes(uint256 tokenId) private view returns (bytes memory) {
         uint256 count = vmuCount[tokenId];
@@ -150,13 +150,13 @@ contract XENTorrent is IXENTorrent, IXENProxying, ERC721("XEN Torrent", "XENTORR
             decodeMintInfo(mintInfo[tokenId]);
         bytes memory attr1 = abi.encodePacked(
             '{"trait_type":"Limited","value":"', limited?'yes':'no', '"},'
-            '{"trait_type":"VMUs","display_type":"number","value":', count.toString(), '},'
-            '{"trait_type":"cRank Start","display_type":"number","value": ', rank.toString(), '},'
-            '{"trait_type":"cRank End","display_type":"number","value":', (rank + count - 1).toString(), '},'
+            '{"trait_type":"VMUs","value":"', count.toString(), '"},'
+            '{"trait_type":"cRank Start","value":"', rank.toString(), '"},'
+            '{"trait_type":"cRank End","value":"', (rank + count - 1).toString(), '"},'
         );
         bytes memory attr2 = abi.encodePacked(
-            '{"trait_type":"AMP","display_type":"number","value":', amp.toString(), '},'
-            '{"trait_type":"EAA","display_type":"number","value":', eaa.toString(), '},'
+            '{"trait_type":"AMP","value":"', amp.toString(), '"},'
+            '{"trait_type":"EAA (%)","value":"', (eaa/10).toString(), '"},'
             '{"trait_type":"Maturity","display_type":"date","value":"', maturityTs.toString(), '"},'
             '{"trait_type":"Redeemed","value":"', redeemed?'yes':'no', '"}'
         );

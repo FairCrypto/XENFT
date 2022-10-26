@@ -93,7 +93,7 @@ contract("XEN Torrent", async accounts => {
     })
 
     it("Should generate SVG", async () => {
-        console.log(await minter.genSVG(1));
+        //console.log(await minter.genSVG(1));
     })
 
     it("Should verify that mint initiator possesses NFT by its tokenId", async () => {
@@ -140,7 +140,7 @@ contract("XEN Torrent", async accounts => {
     })
 
     it("Should generate SVG of a redeemed NFT", async () => {
-        console.log(await minter.genSVG(1));
+        //console.log(await minter.genSVG(1));
     })
 
     it("Should perform another bulkClaimRank operation with regular count", async () => {
@@ -164,7 +164,7 @@ contract("XEN Torrent", async accounts => {
     })
 
     it("Should generate SVG of a regular NFT", async () => {
-        console.log(await minter.genSVG(2));
+        //console.log(await minter.genSVG(2));
     })
 
     it("NFT non-owner should NOT be able to transfer NFT ownership to another account", async () => {
