@@ -4,11 +4,15 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import './BokkyPooBahsDateTimeLibrary.sol';
 
+/*
+    @dev        Library to convert epoch timestamp to a human-readable Date-Time string
+    @dependency uses BokkyPooBahsDateTimeLibrary.sol library internally
+ */
 library DateTime {
 
     using Strings for uint256;
 
-    bytes constant public months = bytes("JanFebMarAprMayJunJulAugSepOctNovDec");
+    bytes constant public MONTHS = bytes("JanFebMarAprMayJunJulAugSepOctNovDec");
 
     /**
      *   @dev returns month as short (3-letter) string
@@ -17,9 +21,9 @@ library DateTime {
         require(idx > 0, 'bad idx');
         bytes memory str = new bytes(3);
         uint256 offset = (idx - 1) * 3;
-        str[0] = bytes1(months[offset]);
-        str[1] = bytes1(months[offset + 1]);
-        str[2] = bytes1(months[offset + 2]);
+        str[0] = bytes1(MONTHS[offset]);
+        str[1] = bytes1(MONTHS[offset + 1]);
+        str[2] = bytes1(MONTHS[offset + 2]);
         return string(str);
     }
 

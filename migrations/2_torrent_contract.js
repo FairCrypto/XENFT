@@ -1,4 +1,4 @@
-const XENTorrent = artifacts.require("XENTorrent");
+const XENFT = artifacts.require("XENFT");
 const XENCrypto = artifacts.require("XENCrypto");
 const DateTime = artifacts.require("DateTime");
 const Quotes = artifacts.require("Quotes");
@@ -13,26 +13,26 @@ module.exports = async function (deployer, network) {
   if (dateTimeAddress && network !== 'test') {
     console.log('using existing DateTime at', dateTimeAddress)
     const dt = await DateTime.at(dateTimeAddress);
-    await deployer.link(dt, XENTorrent);
+    await deployer.link(dt, XENFT);
   } else {
     await deployer.deploy(DateTime);
-    await deployer.link(DateTime, XENTorrent);
+    await deployer.link(DateTime, XENFT);
   }
 
   if (quotesAddress && network !== 'test') {
     console.log('using existing Quotes at', quotesAddress)
     const qs = await Quotes.at(dateTimeAddress);
-    await deployer.link(qs, XENTorrent);
+    await deployer.link(qs, XENFT);
   } else {
     await deployer.deploy(Quotes);
-    await deployer.link(Quotes, XENTorrent);
+    await deployer.link(Quotes, XENFT);
   }
 
   if (xenContractAddress && network !== 'test') {
-    await deployer.deploy(XENTorrent, xenContractAddress);
+    await deployer.deploy(XENFT, xenContractAddress);
   } else {
     const xenContract = await XENCrypto.deployed();
     // console.log(network, xenContract?.address)
-    await deployer.deploy(XENTorrent, xenContract.address);
+    await deployer.deploy(XENFT, xenContract.address);
   }
 };
