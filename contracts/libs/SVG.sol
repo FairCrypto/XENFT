@@ -5,6 +5,10 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "./DateTime.sol";
 import "./Quotes.sol";
 
+/*
+    @dev        Library to create SVG image for XENFT metadata
+    @dependency depends on DataTime.sol and Quotes.sol libraries
+ */
 library SVG {
 
     struct SvgParams {
@@ -24,8 +28,11 @@ library SVG {
     using Strings for uint256;
     using Strings for address;
 
-    string constant STYLE = '<style>.base {fill: #ededed;font-family:Montserrat,arial,sans-serif;font-size:30px;font-weight:400;} .title {}.meta {font-size:12px;}.small {font-size:8px;} }</style>';
+    string private constant _STYLE = '<style>.base {fill: #ededed;font-family:Montserrat,arial,sans-serif;font-size:30px;font-weight:400;} .title {}.meta {font-size:12px;}.small {font-size:8px;} }</style>';
 
+    /**
+        @dev internal helper to create `Gradient` SVG tag
+     */
     function gradient(uint256 color, uint256 angle, uint256 id) pure internal returns (bytes memory) {
         return abi.encodePacked(
             '<linearGradient gradientTransform="rotate(',
@@ -38,6 +45,9 @@ library SVG {
         );
     }
 
+    /**
+        @dev internal helper to create `Defs` SVG tag
+     */
     function defs(uint256[] memory colors, uint256[] memory angles) pure internal returns (bytes memory) {
         string memory res;
         for(uint i = 0; i < colors.length; i++) {
@@ -46,6 +56,9 @@ library SVG {
         return abi.encodePacked('<defs>', res, '</defs>');
     }
 
+    /**
+        @dev internal helper to create `Rect` SVG tag
+     */
     function rect(uint256 id) pure internal returns (bytes memory) {
         return abi.encodePacked(
             '<rect width="100%" height="100%" fill="url(#g',
@@ -54,18 +67,27 @@ library SVG {
         );
     }
 
-    function animation() pure internal returns (string memory) {
+    /**
+        @dev internal helper to create border `Rect` SVG tag
+     */
+    function border() pure internal returns (string memory) {
         return '<rect width="94%" height="96%" fill="transparent" rx="10px" ry="10px" stroke-linejoin="round" x="3%" y="2%" stroke-dasharray="1,6" stroke="white"/>';
     }
 
+    /**
+        @dev internal helper to create group `G` SVG tag
+     */
     function g(uint256[] memory colors) pure internal returns (bytes memory) {
         string memory res;
         for(uint i = 0; i < colors.length; i++) {
             res = string.concat(res, string(rect(i)));
         }
-        return abi.encodePacked(res, animation());
+        return abi.encodePacked(res, border());
     }
 
+    /**
+        @dev internal helper to create XEN logo line pattern with 2 SVG `lines`
+     */
     function logo() pure internal returns (bytes memory) {
         return abi.encodePacked(
             '<line x1="120" y1="100" x2="230" y2="230" stroke="#ededed" stroke-width="2"/>',
@@ -73,6 +95,9 @@ library SVG {
         );
     }
 
+    /**
+        @dev internal helper to create `Text` SVG tag with XEN Crypto contract data
+     */
     function contractData(string memory symbol, address xenAddress) pure internal returns (bytes memory) {
         return abi.encodePacked(
             '<text x="50%" y="5%" class="base small" dominant-baseline="middle" text-anchor="middle">',
@@ -83,6 +108,9 @@ library SVG {
         );
     }
 
+    /**
+        @dev internal helper to create cRank range string
+     */
     function rankAndCount(uint256 rank, uint256 count) pure internal returns (bytes memory) {
         return abi.encodePacked(
             rank.toString(),
@@ -93,6 +121,9 @@ library SVG {
         );
     }
 
+    /**
+        @dev internal helper to create 1st part of metadata section of SVG
+     */
     function meta1(uint256 tokenId, uint256 term, uint256 rank, uint256 count) pure internal returns (bytes memory) {
         bytes memory part1 = abi.encodePacked(
             '<text x="50%" y="50%" class="base title" dominant-baseline="middle" text-anchor="middle">XEN CRYPTO</text>'
@@ -110,6 +141,9 @@ library SVG {
         return abi.encodePacked(part1, part2);
     }
 
+    /**
+        @dev internal helper to create 2nd part of metadata section of SVG
+     */
     function meta2(uint256 maturityTs, uint256 amp, uint256 eaa) pure internal returns (bytes memory) {
         bytes memory part3 = abi.encodePacked(
             '<text x="18%" y="78%" class="base meta" dominant-baseline="middle" >AMP: ',
@@ -127,6 +161,9 @@ library SVG {
         return abi.encodePacked(part3, part4);
     }
 
+    /**
+        @dev internal helper to create `Text` SVG tag for XEN quote
+     */
     function quote(uint256 idx) pure internal returns (bytes memory) {
         return abi.encodePacked(
             '<text x="50%" y="95%" class="base small" dominant-baseline="middle" text-anchor="middle">',
@@ -135,6 +172,9 @@ library SVG {
         );
     }
 
+    /**
+        @dev internal helper to generate `Redeemed` stamp
+     */
     function stamp(bool redeemed) pure internal returns (bytes memory) {
         if (!redeemed) return '';
         return abi.encodePacked(
@@ -143,6 +183,9 @@ library SVG {
         );
     }
 
+    /**
+        @dev main internal helper to create SVG file representing XENFT
+     */
     function image(SvgParams memory params, uint256[] memory colors, uint256[] memory angles, uint256 idx)
         pure
         internal
@@ -150,7 +193,7 @@ library SVG {
     {
         bytes memory graphics = abi.encodePacked(
             defs(colors, angles),
-            STYLE,
+            _STYLE,
             g(colors),
             logo()
         );
