@@ -30,3 +30,4 @@ coverage.json
 coverage/
 
 *.svg
+*.sh
