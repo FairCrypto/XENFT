@@ -1,7 +1,8 @@
 {
   "version": "0.1.0",
-  "description": "XEN Torrent",
+  "description": "XENFT",
   "main": "truffle-config.js",
+  "private": true,
   "directories": {
     "test": "test"
   },

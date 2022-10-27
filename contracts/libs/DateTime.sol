@@ -4,6 +4,10 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/utils/Strings.sol";
 import './BokkyPooBahsDateTimeLibrary.sol';
 
+/*
+    @dev        Library to convert epoch timestamp to a human-readable Date-Time string
+    @dependency uses BokkyPooBahsDateTimeLibrary.sol library internally
+ */
 library DateTime {
 
     using Strings for uint256;

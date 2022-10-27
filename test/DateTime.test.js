@@ -2,23 +2,18 @@
 
 const assert = require('assert')
 require('dotenv').config()
-// const truffleAssert = require('truffle-assertions')
-const timeMachine = require('ganache-time-traveler');
 
 const DateTime = artifacts.require("DateTime")
-const XENTorrent = artifacts.require("XENTorrent")
 
 // const { bn2hexStr, toBigInt, maxBigInt, etherToWei } = require('../src/utils.js')
 
-contract("XEN Torrent (DateTime library)", async accounts => {
+contract("XENFT (DateTime library)", async accounts => {
 
     let dateTime;
-    let minter;
 
     before(async () => {
         try {
             dateTime = await DateTime.deployed();
-            minter = await XENTorrent.deployed();
         } catch (e) {
             console.error(e)
         }
