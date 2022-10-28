@@ -46,7 +46,9 @@ library SVG {
                 id.toString(),
                 '"><stop stop-color="hsl(',
                 color.toString(),
-                ', 100%, 25%)" stop-opacity="1" offset="0%"/><stop stop-color="rgba(64,64,64,0)" stop-opacity="0.5" offset="100%"/></linearGradient>'
+                ', 100%, 25%)" stop-opacity="1" offset="0%"/>'
+                '<stop stop-color="rgba(64,64,64,0)" stop-opacity="0.5" offset="100%"/>'
+                "</linearGradient>"
             );
     }
 
