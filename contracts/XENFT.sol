@@ -32,9 +32,10 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
     // original contract marking to distinguish from proxy copies
     address private immutable _original;
     // ever increasing counter for NFT tokenIds, also used as salt for proxies' spinning
-    // TODO: make the next 2 public ???
-    uint256 private _tokenIdCounter = LIMITED_SERIES_COUNT;
-    uint256 private _limitedSeriesCounter = 1;
+
+    uint256 public _tokenIdCounter = LIMITED_SERIES_COUNT;
+    uint256 public _limitedSeriesCounter = 1;
+
     // pointer to XEN Crypto contract
     XENCrypto public immutable xenCrypto;
 
@@ -280,7 +281,7 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
     /**
         @dev main torrent interface. initiates Bulk Mint (Torrent) Operation
      */
-    function bulkClaimRank(uint256 count, uint256 term) public {
+    function bulkClaimRank(uint256 count, uint256 term) public returns (uint256) {
         bytes memory bytecode = bytes.concat(
             bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
             bytes20(address(this)),
@@ -313,6 +314,7 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
         } else {
             _tokenIdCounter++;
         }
+        return tokenId;
     }
 
     /**
