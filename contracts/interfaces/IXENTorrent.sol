@@ -6,5 +6,6 @@ interface IXENTorrent {
     event EndTorrent(address indexed user, uint256 tokenId, address to);
 
     function bulkClaimRank(uint256 count, uint256 term) external;
+
     function bulkClaimMintReward(uint256 tokenId, address to) external;
 }

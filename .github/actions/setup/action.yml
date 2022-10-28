@@ -1,0 +1,36 @@
+name: Setup
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: npm
+
+    - uses: actions/cache@v3
+      id: cache
+      with:
+        path: '**/node_modules'
+        key: npm-v3-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Install dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: npm ci --no-audit --prefer-offline
+      shell: bash
+      env:
+        SKIP_COMPILE: true
+
+    # Yarn global install is much faster than npm
+    - name: Setup yarn
+      run: npm install -g yarn
+      shell: bash
+
+    - uses: actions/cache@v3
+      with:
+        path: '/home/runner/.config/yarn/global'
+        key: yarn-v3-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Install Truffle
+      run: yarn global add truffle
+      shell: bash
