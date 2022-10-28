@@ -30,7 +30,9 @@
     "prettier-plugin-solidity": "^1.0.0-beta.24",
     "solhint": "^3.3.7",
     "truffle-assertions": "^0.9.2",
-    "truffle-plugin-verify": "^0.5.28"
+    "truffle-plugin-verify": "^0.5.28",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3"
   },
   "scripts": {
     "compile": "truffle compile -all",
@@ -38,10 +40,18 @@
     "lint": "npm run lint:sol",
     "lint:fix": "npm run lint:sol:fix",
     "lint:sol": "solhint 'contracts/**/*.sol' && prettier -c 'contracts/**/*.sol'",
-    "lint:sol:fix": "prettier --write \"contracts/**/*.sol\""
+    "lint:sol:fix": "solhint --fix 'contracts/**/*.sol' && prettier --write \"contracts/**/*.sol\"",
+    "husky:install": "husky install"
   },
   "files": [
     "/build/contracts/*.json",
     "/contracts/**/*.sol"
-  ]
+  ],
+  "lint-staged": {
+    "contracts/*.sol": [
+      "solhint --fix",
+      "prettier --write"
+    ],
+    "**/*.(md|json)": "prettier --write"
+  }
 }
