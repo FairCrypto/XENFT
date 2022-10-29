@@ -33,8 +33,8 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
     address private immutable _original;
     // ever increasing counter for NFT tokenIds, also used as salt for proxies' spinning
 
-    uint256 public _tokenIdCounter = LIMITED_SERIES_COUNT;
-    uint256 public _limitedSeriesCounter = 1;
+    uint256 public tokenIdCounter = LIMITED_SERIES_COUNT;
+    uint256 public limitedSeriesCounter = 1;
 
     // pointer to XEN Crypto contract
     XENCrypto public immutable xenCrypto;
@@ -292,9 +292,9 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
         bytes memory callData = abi.encodeWithSignature("callClaimRank(uint256)", term);
         address proxy;
         bool succeeded;
-        uint256 tokenId = count > LIMITED_SERIES_VMU_THRESHOLD && _limitedSeriesCounter < LIMITED_SERIES_COUNT
-            ? _limitedSeriesCounter
-            : _tokenIdCounter;
+        uint256 tokenId = count > LIMITED_SERIES_VMU_THRESHOLD && limitedSeriesCounter < LIMITED_SERIES_COUNT
+            ? limitedSeriesCounter
+            : tokenIdCounter;
         for (uint256 i = 1; i < count + 1; i++) {
             bytes32 salt = keccak256(abi.encodePacked(i, tokenId));
             assembly {
@@ -309,10 +309,10 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
         }
         vmuCount[tokenId] = count;
         _mint(msg.sender, tokenId);
-        if (count > LIMITED_SERIES_VMU_THRESHOLD && _limitedSeriesCounter < LIMITED_SERIES_COUNT) {
-            _limitedSeriesCounter++;
+        if (count > LIMITED_SERIES_VMU_THRESHOLD && limitedSeriesCounter < LIMITED_SERIES_COUNT) {
+            limitedSeriesCounter++;
         } else {
-            _tokenIdCounter++;
+            tokenIdCounter++;
         }
         return tokenId;
     }
