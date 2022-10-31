@@ -5,10 +5,12 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
-import "./libs/SVG.sol";
-import "./libs/DateTime.sol";
 import "./interfaces/IXENTorrent.sol";
 import "./interfaces/IXENProxying.sol";
+import "./libs/SVG.sol";
+import "./libs/DateTime.sol";
+import "./libs/SVG.sol";
+import "./libs/Array.sol";
 
 /*
     XENFT props:
@@ -19,15 +21,22 @@ import "./interfaces/IXENProxying.sol";
 contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
     using DateTime for uint256;
     using Strings for uint256;
+    using Array for uint256[];
 
     // XENFT limited series params
     uint256 public constant LIMITED_SERIES_COUNT = 10_001;
     uint256 public constant LIMITED_SERIES_VMU_THRESHOLD = 99;
+    uint256 public constant LIMITED_SERIES_VMU_THRESHOLD1 = 119;
 
     // Metadata image params
-    uint256[] public COLORS_LIMITED = [38, 169, 191, 305];
-    uint256[] public COLORS_REGULAR = [225, 220, 215, 205];
-    uint256[] public ANGLES = [45, 135, 225, 315];
+    uint256 public constant MAX_TERM = 1_000;
+    uint256 public constant COLORS_HALF_SCALE = 180;
+    uint256 public constant DEFAULT_SATURATION = 75;
+    uint256 public constant DEFAULT_LUMINOSITY = 35;
+    uint256 public constant DEFAULT_OPACITY = 1;
+    uint256[] public HUES_LIMITED1 = [169, 210, 305];
+    uint256[] public HUES_LIMITED2 = [263, 0, 42];
+    uint256[] public STOP_OFFSETS = [10, 50, 90];
 
     // original contract marking to distinguish from proxy copies
     address private immutable _original;
@@ -38,6 +47,8 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
     // pointer to XEN Crypto contract
     XENCrypto public immutable xenCrypto;
 
+    // mapping Address => tokenId[]
+    mapping(address => uint256[]) public ownedTokens;
     // mapping: NFT tokenId => count of Virtual Mining Units
     mapping(uint256 => uint256) public vmuCount;
     // mapping: NFT tokenId => MintInfo (used in tokenURI generation)
@@ -163,6 +174,52 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
     }
 
     /**
+        @dev private helper to generate SVG gradients for limited XENFT series
+     */
+    function _limitedSeriesGradients(uint256 tokenId) private view returns (SVG.Gradient[] memory gradients) {
+        uint256[] memory specialColors = vmuCount[tokenId] < LIMITED_SERIES_VMU_THRESHOLD1
+            ? HUES_LIMITED1
+            : HUES_LIMITED2;
+        SVG.Color[] memory colors = new SVG.Color[](3);
+        for(uint i = 0; i < colors.length; i++) {
+            colors[i] = SVG.Color({
+                h: specialColors[i],
+                s: DEFAULT_SATURATION,
+                l: DEFAULT_LUMINOSITY,
+                a: DEFAULT_OPACITY,
+                off: STOP_OFFSETS[i]
+            });
+        }
+        gradients = new SVG.Gradient[](1);
+        gradients[0] = SVG.Gradient({ colors: colors, id: 0 });
+    }
+
+    /**
+        @dev private helper to generate SVG gradients for regular XENFT series
+     */
+   function _regularSeriesGradients(uint256 tokenId) private view returns (SVG.Gradient[] memory gradients) {
+       uint256 vmus = vmuCount[tokenId];
+       uint256 term = getTerm(mintInfo[tokenId]);
+       SVG.Color[] memory colors = new SVG.Color[](2);
+       colors[0] = SVG.Color({
+            h: (vmus * COLORS_HALF_SCALE) / LIMITED_SERIES_VMU_THRESHOLD,
+            s: DEFAULT_SATURATION,
+            l: DEFAULT_LUMINOSITY,
+            a: DEFAULT_OPACITY,
+            off: STOP_OFFSETS[0]
+       });
+       colors[1] = SVG.Color({
+            h: COLORS_HALF_SCALE + (term * COLORS_HALF_SCALE) / MAX_TERM,
+            s: DEFAULT_SATURATION,
+            l: DEFAULT_LUMINOSITY,
+            a: DEFAULT_OPACITY,
+            off: STOP_OFFSETS[2]
+       });
+       gradients = new SVG.Gradient[](1);
+       gradients[0] = SVG.Gradient({ colors: colors, id: 0 });
+   }
+
+    /**
         @dev private helper to generate SVG image based on XENFT params
      */
     function _svgData(uint256 tokenId) private view returns (bytes memory) {
@@ -180,7 +237,13 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
             redeemed: getRedeemed(mintInfo[tokenId])
         });
         uint256 idx = uint256(keccak256(abi.encode(mintInfo[tokenId]))) % Quotes.QUOTES_COUNT;
-        return SVG.image(params, isLimited(tokenId) ? COLORS_LIMITED : COLORS_REGULAR, ANGLES, idx);
+        if (isLimited(tokenId)) {
+            // Limited series
+            return SVG.image(params, _limitedSeriesGradients(tokenId), idx);
+        } else {
+            // Ordinary series
+            return SVG.image(params, _regularSeriesGradients(tokenId), idx);
+        }
     }
 
     //function genSVG(uint256 tokenId) public view returns (string memory) {
@@ -223,7 +286,11 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
             redeemed ? "yes" : "no",
             '"}'
         );
-        return abi.encodePacked("[", attr1, attr2, "]");
+        return abi.encodePacked(
+            '[',
+                attr1,
+                attr2,
+            ']');
     }
 
     /**
@@ -233,20 +300,20 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
         uint256 count = vmuCount[tokenId];
         require(count > 0);
         bytes memory dataURI = abi.encodePacked(
-            "{",
-            '"name": "XENFT #',
-            tokenId.toString(),
-            '",',
-            '"description": "XENFT: XEN Crypto Minting Torrent",',
-            '"image": "',
-            "data:image/svg+xml;base64,",
-            Base64.encode(_svgData(tokenId)),
-            '",',
-            '"attributes": ',
-            _attributes(tokenId),
-            "}"
+            '{',
+                '"name": "XENFT #', tokenId.toString(), '",',
+                '"description": "XENFT: XEN Crypto Minting Torrent",',
+                '"image": "',
+                    "data:image/svg+xml;base64,",
+                    Base64.encode(_svgData(tokenId)),
+                    '",',
+                '"attributes": ', _attributes(tokenId),
+            '}'
         );
-        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(dataURI)));
+        return string(abi.encodePacked(
+                'data:application/json;base64,',
+                Base64.encode(dataURI)
+            ));
     }
 
     /**
@@ -307,12 +374,14 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
             }
         }
         vmuCount[tokenId] = count;
-        _mint(msg.sender, tokenId);
+        _safeMint(msg.sender, tokenId);
+        ownedTokens[msg.sender].addItem(tokenId);
         if (count > LIMITED_SERIES_VMU_THRESHOLD && _limitedSeriesCounter < LIMITED_SERIES_COUNT) {
             _limitedSeriesCounter++;
         } else {
             _tokenIdCounter++;
         }
+        emit StartTorrent(msg.sender, count, term);
     }
 
     /**
@@ -345,5 +414,19 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
             require(succeeded, "XENFT: Error while powering down");
         }
         _setRedeemed(tokenId);
+        emit EndTorrent(msg.sender, tokenId, to);
     }
+
+    /**
+        @dev overrides OZ ERC-721 after transfer hook to allow token enumeration by owner
+     */
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        ownedTokens[from].removeItem(tokenId);
+        ownedTokens[to].addItem(tokenId);
+    }
+
 }

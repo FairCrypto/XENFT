@@ -107,6 +107,7 @@ contract("XENFT", async accounts => {
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();
         assert.ok(decodedImage.startsWith('<svg'));
         assert.ok(decodedImage.endsWith('</svg>'));
+        console.log(decodedImage);
     })
 
     it("Should be able to return minters", async () => {
@@ -158,6 +159,18 @@ contract("XENFT", async accounts => {
         const base64str = encodedStr.replace('data:application/json;base64,', '');
         const decodedStr = Buffer.from(base64str, 'base64').toString('utf8');
         console.log(decodedStr)
+        const metadata = JSON.parse(decodedStr.replace(/\n/, ''));
+        assert.ok('name' in metadata);
+        assert.ok('description' in metadata);
+        assert.ok('image' in metadata);
+        assert.ok('attributes' in metadata);
+        assert.ok(Array.isArray(metadata.attributes));
+        assert.ok(metadata.image.startsWith('data:image/svg+xml;base64,'));
+        const imageBase64 = metadata.image.replace('data:image/svg+xml;base64,', '');
+        const decodedImage = Buffer.from(imageBase64, 'base64').toString();
+        assert.ok(decodedImage.startsWith('<svg'));
+        assert.ok(decodedImage.endsWith('</svg>'));
+        console.log(decodedImage);
     })
 
     it("NFT non-owner should NOT be able to transfer NFT ownership to another account", async () => {

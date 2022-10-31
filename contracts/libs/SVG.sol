@@ -10,6 +10,7 @@ import "./Quotes.sol";
     @dependency depends on DataTime.sol and Quotes.sol libraries
  */
 library SVG {
+    // Type to encode all data params for SVG image generation
     struct SvgParams {
         string symbol;
         address xenAddress;
@@ -23,44 +24,97 @@ library SVG {
         bool redeemed;
     }
 
+    // Type to encode SVG gradient stop color on HSL color scale
+    struct Color {
+        uint256 h;
+        uint256 s;
+        uint256 l;
+        uint256 a;
+        uint256 off;
+    }
+
+    // Type to encode SVG gradient
+    struct Gradient {
+        Color[] colors;
+        uint256 id;
+    }
+
     using DateTime for uint256;
     using Strings for uint256;
     using Strings for address;
 
     string private constant _STYLE =
-        "<style>.base {fill: #ededed;font-family:Montserrat,arial,sans-serif;font-size:30px;font-weight:400;} .title {}.meta {font-size:12px;}.small {font-size:8px;} }</style>";
+        '<style> '
+            '.base {fill: #ededed;font-family:Montserrat,arial,sans-serif;font-size:30px;font-weight:400;} '
+            '.title {} '
+            '.meta {font-size:12px;} '
+            '.small {font-size:8px;} }'
+        '</style>';
+
+    /**
+        @dev internal helper to create HSL-encoded color prop for SVG tags
+     */
+    function colorHSL(Color memory c) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            'hsl(',
+            c.h.toString(),
+            ', ',
+            c.s.toString(),
+            '%, ',
+            c.l.toString(),
+            '%)'
+        );
+    }
+
+    /**
+        @dev internal helper to create `stop` SVG tag
+     */
+    function colorStop(Color memory c) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            '<stop stop-color="',
+            colorHSL(c),
+            '" stop-opacity="',
+            c.a.toString(),
+            '" offset="',
+            c.off.toString(),
+            '%"/>'
+        );
+    }
 
     /**
         @dev internal helper to create `Gradient` SVG tag
      */
-    function gradient(
-        uint256 color,
-        uint256 angle,
-        uint256 id
-    ) internal pure returns (bytes memory) {
+    function linearGradient(Color[] memory colors, uint256 id) internal pure returns (bytes memory) {
+        string memory stops = "";
+        for (uint i = 0; i < colors.length; i++) {
+            if (colors[i].h != 0) {
+                stops = string.concat(stops, string(colorStop(colors[i])));
+            }
+        }
         return
             abi.encodePacked(
-                '<linearGradient gradientTransform="rotate(',
-                angle.toString(),
-                ', 0.4, 0.4)" x1="50%" y1="0%" x2="50%" y2="100%" id="g',
-                id.toString(),
-                '"><stop stop-color="hsl(',
-                color.toString(),
-                ', 100%, 25%)" stop-opacity="1" offset="0%"/>'
-                '<stop stop-color="rgba(64,64,64,0)" stop-opacity="0.5" offset="100%"/>'
-                "</linearGradient>"
+                '<linearGradient  '
+                    'x1="100%" '
+                    'y1="100%" '
+                    'x2="0%" '
+                    'y2="0%" '
+                    'id="g',
+                    id.toString(),
+                    '">',
+                    stops,
+                '</linearGradient>'
             );
     }
 
     /**
         @dev internal helper to create `Defs` SVG tag
      */
-    function defs(uint256[] memory colors, uint256[] memory angles) internal pure returns (bytes memory) {
-        string memory res;
-        for (uint256 i = 0; i < colors.length; i++) {
-            res = string.concat(res, string(gradient(colors[i], angles[i], i)));
-        }
-        return abi.encodePacked("<defs>", res, "</defs>");
+    function defs(Gradient memory grad) internal pure returns (bytes memory) {
+        return abi.encodePacked(
+            '<defs>',
+                linearGradient(grad.colors, 0),
+            '</defs>'
+        );
     }
 
     /**
@@ -69,9 +123,16 @@ library SVG {
     function rect(uint256 id) internal pure returns (bytes memory) {
         return
             abi.encodePacked(
-                '<rect width="100%" height="100%" fill="url(#g',
-                id.toString(),
-                ')" rx="10px" ry="10px" stroke-linejoin="round"/>'
+                '<rect '
+                    'width="100%" '
+                    'height="100%" '
+                    'fill="url(#g',
+                    id.toString(),
+                    ')" '
+                    'rx="10px" '
+                    'ry="10px" '
+                    'stroke-linejoin="round" '
+                '/>'
             );
     }
 
@@ -80,18 +141,34 @@ library SVG {
      */
     function border() internal pure returns (string memory) {
         return
-            '<rect width="94%" height="96%" fill="transparent" rx="10px" ry="10px" stroke-linejoin="round" x="3%" y="2%" stroke-dasharray="1,6" stroke="white"/>';
+            '<rect '
+                'width="94%" '
+                'height="96%" '
+                'fill="transparent" '
+                'rx="10px" '
+                'ry="10px" '
+                'stroke-linejoin="round" '
+                'x="3%" '
+                'y="2%" '
+                'stroke-dasharray="1,6" '
+                'stroke="white" '
+            '/>';
     }
 
     /**
         @dev internal helper to create group `G` SVG tag
      */
-    function g(uint256[] memory colors) internal pure returns (bytes memory) {
-        string memory res;
-        for (uint256 i = 0; i < colors.length; i++) {
-            res = string.concat(res, string(rect(i)));
+    function g(uint256 gradientsCount) internal pure returns (bytes memory) {
+        string memory background = "";
+        for (uint256 i = 0; i < gradientsCount; i++) {
+            background = string.concat(background, string(rect(i)));
         }
-        return abi.encodePacked(res, border());
+        return abi.encodePacked(
+            '<g>',
+                background,
+                border(),
+            '</g>'
+        );
     }
 
     /**
@@ -100,8 +177,22 @@ library SVG {
     function logo() internal pure returns (bytes memory) {
         return
             abi.encodePacked(
-                '<line x1="120" y1="100" x2="230" y2="230" stroke="#ededed" stroke-width="2"/>',
-                '<line x1="230" y1="100" x2="120" y2="230" stroke="#ededed" stroke-width="2"/>'
+                '<line '
+                    'x1="120" '
+                    'y1="100" '
+                    'x2="230" '
+                    'y2="230" '
+                    'stroke="#ededed" '
+                    'stroke-width="2" '
+                '/>',
+                '<line '
+                    'x1="230" '
+                    'y1="100" '
+                    'x2="120" '
+                    'y2="230" '
+                    'stroke="#ededed" '
+                    'stroke-width="2" '
+                '/>'
             );
     }
 
@@ -111,10 +202,15 @@ library SVG {
     function contractData(string memory symbol, address xenAddress) internal pure returns (bytes memory) {
         return
             abi.encodePacked(
-                '<text x="50%" y="5%" class="base small" dominant-baseline="middle" text-anchor="middle">',
-                symbol,
-                unicode"・",
-                xenAddress.toHexString(),
+                '<text '
+                    'x="50%" '
+                    'y="5%" '
+                    'class="base small" '
+                    'dominant-baseline="middle" '
+                    'text-anchor="middle">',
+                    symbol,
+                    unicode"・",
+                    xenAddress.toHexString(),
                 "</text>"
             );
     }
@@ -136,17 +232,42 @@ library SVG {
         uint256 count
     ) internal pure returns (bytes memory) {
         bytes memory part1 = abi.encodePacked(
-            '<text x="50%" y="50%" class="base title" dominant-baseline="middle" text-anchor="middle">XEN CRYPTO</text>'
-            '<text x="18%" y="63%" class="base meta" dominant-baseline="middle" >#',
-            tokenId.toString(),
-            '</text><text x="18%" y="68%" class="base meta" dominant-baseline="middle" >Term: ',
-            term.toString()
+            '<text '
+                'x="50%" '
+                'y="50%" '
+                'class="base title" '
+                'dominant-baseline="middle" '
+                'text-anchor="middle">'
+                'XEN CRYPTO'
+            '</text>'
+            '<text '
+                'x="18%" '
+                'y="63%" '
+                'class="base meta" '
+                'dominant-baseline="middle"> '
+                '#',
+                tokenId.toString(),
+            '</text>'
+            '<text '
+                'x="18%" '
+                'y="68%" '
+                'class="base meta" '
+                'dominant-baseline="middle" >'
+                'Term: ',
+                term.toString()
         );
         bytes memory part2 = abi.encodePacked(
-            " day(s)</text>"
-            '<text x="18%" y="73%" class="base meta" dominant-baseline="middle" >cRank: ',
-            rankAndCount(rank, count),
-            " VMUs)</text>"
+                ' day(s)'
+            '</text>'
+            '<text '
+                'x="18%" '
+                'y="73%" '
+                'class="base meta" '
+                'dominant-baseline="middle" >'
+                'cRank: ',
+                rankAndCount(rank, count),
+                ' VMUs)'
+            '</text>'
         );
         return abi.encodePacked(part1, part2);
     }
@@ -160,17 +281,33 @@ library SVG {
         uint256 eaa
     ) internal pure returns (bytes memory) {
         bytes memory part3 = abi.encodePacked(
-            '<text x="18%" y="78%" class="base meta" dominant-baseline="middle" >AMP: ',
-            amp.toString(),
-            "</text>"
-            '<text x="18%" y="83%" class="base meta" dominant-baseline="middle" >EAA: ',
-            (eaa / 10).toString()
+            '<text '
+                'x="18%" '
+                'y="78%" '
+                'class="base meta" '
+                'dominant-baseline="middle" >'
+                'AMP: ',
+                amp.toString(),
+            '</text>'
+            '<text '
+                'x="18%" '
+                'y="83%" '
+                'class="base meta" '
+                'dominant-baseline="middle" >'
+                'EAA: ',
+                (eaa / 10).toString()
         );
         bytes memory part4 = abi.encodePacked(
-            "%</text>"
-            '<text x="18%" y="88%" class="base meta" dominant-baseline="middle" >Maturity: ',
-            maturityTs.asString(),
-            "</text>"
+                '%'
+            '</text>'
+            '<text '
+                'x="18%" '
+                'y="88%" '
+                'class="base meta" '
+                'dominant-baseline="middle" >'
+                'Maturity: ',
+                maturityTs.asString(),
+            '</text>'
         );
         return abi.encodePacked(part3, part4);
     }
@@ -181,9 +318,14 @@ library SVG {
     function quote(uint256 idx) internal pure returns (bytes memory) {
         return
             abi.encodePacked(
-                '<text x="50%" y="95%" class="base small" dominant-baseline="middle" text-anchor="middle">',
-                Quotes.getQuote(Quotes.QUOTES, idx),
-                "</text>"
+                '<text '
+                    'x="50%" '
+                    'y="95%" '
+                    'class="base small" '
+                    'dominant-baseline="middle" '
+                    'text-anchor="middle" >',
+                    Quotes.getQuote(Quotes.QUOTES, idx),
+                '</text>'
             );
     }
 
@@ -191,11 +333,31 @@ library SVG {
         @dev internal helper to generate `Redeemed` stamp
      */
     function stamp(bool redeemed) internal pure returns (bytes memory) {
-        if (!redeemed) return "";
+        if (!redeemed) return '';
         return
             abi.encodePacked(
-                '<rect x="50%" y="77.5%" width="100" height="40" stroke="black" stroke-width="1" fill="none" rx="5px" ry="5px" transform="translate(-50,-20) rotate(-20,0,400)" />',
-                '<text x="50%" y="77.5%" stroke="black" class="base meta" dominant-baseline="middle" text-anchor="middle" transform="translate(0,0) rotate(-20,-45,380)" >Redeemed</text>'
+                '<rect '
+                    'x="50%" '
+                    'y="77.5%" '
+                    'width="100" '
+                    'height="40" '
+                    'stroke="black" '
+                    'stroke-width="1" '
+                    'fill="none" '
+                    'rx="5px" '
+                    'ry="5px" '
+                    'transform="translate(-50,-20) '
+                    'rotate(-20,0,400)" />',
+                '<text '
+                    'x="50%" '
+                    'y="77.5%" '
+                    'stroke="black" '
+                    'class="base meta" '
+                    'dominant-baseline="middle" '
+                    'text-anchor="middle" '
+                    'transform="translate(0,0) rotate(-20,-45,380)" >'
+                    'Redeemed'
+                '</text>'
             );
     }
 
@@ -204,11 +366,15 @@ library SVG {
      */
     function image(
         SvgParams memory params,
-        uint256[] memory colors,
-        uint256[] memory angles,
+        Gradient[] memory gradients,
         uint256 idx
     ) internal pure returns (bytes memory) {
-        bytes memory graphics = abi.encodePacked(defs(colors, angles), _STYLE, g(colors), logo());
+        bytes memory graphics = abi.encodePacked(
+            defs(gradients[0]),
+            _STYLE,
+            g(gradients.length),
+            logo()
+        );
         bytes memory metadata = abi.encodePacked(
             contractData(params.symbol, params.xenAddress),
             meta1(params.tokenId, params.term, params.rank, params.count),
@@ -218,9 +384,12 @@ library SVG {
         );
         return
             abi.encodePacked(
-                '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 566">',
-                graphics,
-                metadata,
+                '<svg '
+                    'xmlns="http://www.w3.org/2000/svg" '
+                    'preserveAspectRatio="xMinYMin meet" '
+                    'viewBox="0 0 350 566">',
+                    graphics,
+                    metadata,
                 "</svg>"
             );
     }
