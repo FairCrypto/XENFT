@@ -41,7 +41,8 @@
     "lint:fix": "npm run lint:sol:fix",
     "lint:sol": "solhint 'contracts/**/*.sol' && prettier -c 'contracts/**/*.sol'",
     "lint:sol:fix": "solhint --fix 'contracts/**/*.sol' && prettier --write \"contracts/**/*.sol\"",
-    "husky:install": "husky install"
+    "husky:install": "husky install",
+    "npm-publish": "truffle compile && npm publish"
   },
   "files": [
     "/build/contracts/*.json",
