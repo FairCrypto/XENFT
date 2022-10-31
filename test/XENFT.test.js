@@ -67,7 +67,7 @@ contract("XENFT", async accounts => {
 
     it("Should perform bulkClaimRank operation", async () => {
         const res = await xeNFT.bulkClaimRank(countLimited, term, { from: accounts[0] });
-        assert.ok(res.receipt.rawLogs.length === countLimited + 1);
+        assert.ok(res.receipt.rawLogs.length === countLimited + 2);
         console.log('      gas used', res.receipt.gasUsed.toLocaleString());
         res.receipt.rawLogs.slice(0, countLimited).forEach(log => {
             virtualMinters.push(log.topics[1].replace('000000000000000000000000', ''))
@@ -88,6 +88,9 @@ contract("XENFT", async accounts => {
     it("Should verify that mint initiator possesses NFT by its tokenId", async () => {
         assert.ok(await xeNFT.ownerOf(tokenId) === accounts[0]);
         assert.ok(await xeNFT.balanceOf(accounts[0]).then(_ => _.toNumber()) === 1);
+        const ownedTokens = await xeNFT.ownedTokens();
+        assert.ok(ownedTokens.length === 1);
+        assert.ok(BigInt(ownedTokens[0].toNumber()) === tokenId);
     })
 
     it("Should be able to return tokenURI as base-64 encoded data URL", async () => {
@@ -107,6 +110,7 @@ contract("XENFT", async accounts => {
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();
         assert.ok(decodedImage.startsWith('<svg'));
         assert.ok(decodedImage.endsWith('</svg>'));
+        console.log(decodedImage);
     })
 
     it("Should be able to return minters", async () => {
@@ -139,7 +143,7 @@ contract("XENFT", async accounts => {
             await timeMachine.advanceBlock();
         }
         const res = await xeNFT.bulkClaimRank(countRegular, term + 20, { from: accounts[1] });
-        assert.ok(res.receipt.rawLogs.length === countRegular + 1);
+        assert.ok(res.receipt.rawLogs.length === countRegular + 2);
         console.log('      gas used', res.receipt.gasUsed.toLocaleString());
         res.receipt.rawLogs.slice(0, countRegular).forEach(log => {
             newVirtualMinters.push(log.topics[1].replace('000000000000000000000000', ''))
@@ -158,6 +162,18 @@ contract("XENFT", async accounts => {
         const base64str = encodedStr.replace('data:application/json;base64,', '');
         const decodedStr = Buffer.from(base64str, 'base64').toString('utf8');
         console.log(decodedStr)
+        const metadata = JSON.parse(decodedStr.replace(/\n/, ''));
+        assert.ok('name' in metadata);
+        assert.ok('description' in metadata);
+        assert.ok('image' in metadata);
+        assert.ok('attributes' in metadata);
+        assert.ok(Array.isArray(metadata.attributes));
+        assert.ok(metadata.image.startsWith('data:image/svg+xml;base64,'));
+        const imageBase64 = metadata.image.replace('data:image/svg+xml;base64,', '');
+        const decodedImage = Buffer.from(imageBase64, 'base64').toString();
+        assert.ok(decodedImage.startsWith('<svg'));
+        assert.ok(decodedImage.endsWith('</svg>'));
+        console.log(decodedImage);
     })
 
     it("NFT non-owner should NOT be able to transfer NFT ownership to another account", async () => {
@@ -166,8 +182,16 @@ contract("XENFT", async accounts => {
     })
 
     it("NFT owner should be able to transfer NFT ownership to another account", async () => {
+        let ownedTokens1 = await xeNFT.ownedTokens({ from: accounts[1] });
+        assert.ok(ownedTokens1.length === 1);
+        assert.ok(BigInt(ownedTokens1[0].toNumber()) === tokenId);
         await assert.doesNotReject(() => xeNFT.transferFrom(accounts[1], accounts[0], tokenId, { from: accounts[1] }));
         assert.ok(await xeNFT.ownerOf(tokenId, { from: accounts[0] }) === accounts[0]);
+        ownedTokens1 = await xeNFT.ownedTokens({ from: accounts[1] });
+        assert.ok(ownedTokens1.length === 0);
+        assert.ok(await xeNFT.ownerOf(tokenId, { from: accounts[0] }) === accounts[0]);
+        const ownedTokens0 = await xeNFT.ownedTokens({ from: accounts[0] });
+        assert.ok(ownedTokens0.length === 2);
     })
 
     it("Should perform bulkClaimMintReward operation for (new) eligible NFT owner", async () => {
