@@ -47,6 +47,7 @@ library SVG {
         "<style> "
         ".base {fill: #ededed;font-family:Montserrat,arial,sans-serif;font-size:30px;font-weight:400;} "
         ".title {} "
+        ".logo {font-size:200px;font-weight:100;} "
         ".meta {font-size:12px;} "
         ".small {font-size:8px;} }"
         "</style>";
@@ -161,22 +162,14 @@ library SVG {
     function logo() internal pure returns (bytes memory) {
         return
             abi.encodePacked(
-                "<line "
-                'x1="120" '
-                'y1="100" '
-                'x2="230" '
-                'y2="230" '
-                'stroke="#ededed" '
-                'stroke-width="2" '
-                "/>",
-                "<line "
-                'x1="230" '
-                'y1="100" '
-                'x2="120" '
-                'y2="230" '
-                'stroke="#ededed" '
-                'stroke-width="2" '
-                "/>"
+                '<text '
+                'x="50%" '
+                'y="31%" '
+                'class="base logo" '
+                'dominant-baseline="middle" '
+                'text-anchor="middle">'
+                'X'
+                '</text>'
             );
     }
 
@@ -203,6 +196,7 @@ library SVG {
         @dev internal helper to create cRank range string
      */
     function rankAndCount(uint256 rank, uint256 count) internal pure returns (bytes memory) {
+        if (count == 1) return abi.encodePacked(rank.toString(), " (", count.toString());
         return abi.encodePacked(rank.toString(), "..", (rank + count - 1).toString(), " (", count.toString());
     }
 
