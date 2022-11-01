@@ -254,10 +254,9 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
         }
     }
 
-    //function genSVG(uint256 tokenId) public view returns (string memory) {
-    //    return string(_svgData(tokenId));
-    //}
-
+    /**
+        @dev private helper to construct cRank prop of NFT metadata
+     */
     function _cRankProp(uint256 rank, uint256 count) private pure returns (bytes memory) {
         if (count == 1) return abi.encodePacked(rank.toString());
         return abi.encodePacked(
