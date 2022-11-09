@@ -9,9 +9,11 @@ const XENFT = artifacts.require("XENFT");
 
 require('dotenv').config();
 
+const extraPrint = process.env.EXTRA_PRINT;
+
 // const { bn2hexStr, toBigInt, maxBigInt, etherToWei } = require('../src/utils.js')
 
-contract("XENFT", async accounts => {
+contract("XENFT --- Standard Edition", async accounts => {
 
     let token;
     let xeNFT;
@@ -20,8 +22,10 @@ contract("XENFT", async accounts => {
     let genesisTs = 0;
     let tokenId;
     const term = 10;
-    const countLimited = 100;
-    const countRegular = 90;
+    const term2= 100;
+    const countLimited = 10;
+    const tokenIdRegular = 10_001n;
+    // const countRegular = 90;
 
 
     before(async () => {
@@ -45,19 +49,9 @@ contract("XENFT", async accounts => {
 
     it("Should verify that XEN Crypto has initial Global Rank === 1", async () => {
         const expectedInitialGlobalRank = 1;
-        assert.ok(await token.globalRank().then(_ => _.toNumber()) === expectedInitialGlobalRank)
-    })
-
-    it("Should test mintInfo encoding", async () => {
-        const mintInfo = await xeNFT.encodeMintInfo(1,2,3,4,5,false).then(toBigInt);
-        // console.log(BigInt(mintInfo).toString(2))
-        const { term, maturityTs, rank, amp, eaa, redeemed } =  await xeNFT.decodeMintInfo(mintInfo);
-        assert.ok(term.toNumber() === 1);
-        assert.ok(maturityTs.toNumber() === 2);
-        assert.ok(rank.toNumber() === 3);
-        assert.ok(amp.toNumber() === 4);
-        assert.ok(eaa.toNumber() === 5);
-        assert.ok(redeemed === false);
+        assert.ok(await token.globalRank().then(_ => _.toNumber()) === expectedInitialGlobalRank);
+        const expectedCurrentMaxTerm = 100 * 24 * 3600;
+        assert.ok(await token.getCurrentMaxTerm().then(_ => _.toNumber()) === expectedCurrentMaxTerm);
     })
 
     it("Should reject bulkClaimRank transaction with incorrect count OR term", async () => {
@@ -68,21 +62,22 @@ contract("XENFT", async accounts => {
     it("Should perform bulkClaimRank operation", async () => {
         const res = await xeNFT.bulkClaimRank(countLimited, term, { from: accounts[0] });
         assert.ok(res.receipt.rawLogs.length === countLimited + 2);
-        console.log('      gas used', res.receipt.gasUsed.toLocaleString());
+        extraPrint && console.log('      gas used', res.receipt.gasUsed.toLocaleString());
         res.receipt.rawLogs.slice(0, countLimited).forEach(log => {
             virtualMinters.push(log.topics[1].replace('000000000000000000000000', ''))
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited]?.topics[3]);
-        assert.ok(tokenId === 1n);
+        assert.ok(tokenId === tokenIdRegular);
         assert.ok(virtualMinters.length === countLimited);
     })
 
     it("Should verify that XEN Crypto has increased Global Rank by the number of virtual minters", async () => {
         assert.ok(await token.activeMinters().then(_ => _.toNumber()) === countLimited);
+        //console.log(await token.activeMinters().then(_ => _.toNumber()));
     })
 
     it("Should generate SVG", async () => {
-        //console.log(await xeNFT.genSVG(1));
+        //extraPrint && console.log(await xeNFT.genSVG(1));
     })
 
     it("Should verify that mint initiator possesses NFT by its tokenId", async () => {
@@ -98,7 +93,7 @@ contract("XENFT", async accounts => {
         assert.ok(encodedStr.startsWith('data:application/json;base64,'));
         const base64str = encodedStr.replace('data:application/json;base64,', '');
         const decodedStr = Buffer.from(base64str, 'base64').toString('utf8');
-        console.log(decodedStr)
+        extraPrint === '2' && console.log(decodedStr)
         const metadata = JSON.parse(decodedStr.replace(/\n/, ''));
         assert.ok('name' in metadata);
         assert.ok('description' in metadata);
@@ -110,7 +105,7 @@ contract("XENFT", async accounts => {
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();
         assert.ok(decodedImage.startsWith('<svg'));
         assert.ok(decodedImage.endsWith('</svg>'));
-        console.log(decodedImage);
+        extraPrint === '2' && console.log(decodedImage);
     })
 
     it("Should be able to return minters", async () => {
@@ -122,9 +117,9 @@ contract("XENFT", async accounts => {
         await timeMachine.advanceBlock();
         await assert.rejects(() => xeNFT.bulkClaimMintReward(tokenId, accounts[1], { from: accounts[1] }));
         const res = await xeNFT.bulkClaimMintReward(tokenId, accounts[0], { from: accounts[0] });
-        console.log('      gas used', res.receipt.gasUsed.toLocaleString());
+        extraPrint && console.log('      gas used', res.receipt.gasUsed.toLocaleString());
         assert.ok(await token.activeMinters().then(_ => _.toNumber()) === 0);
-        assert.ok(await token.balanceOf(accounts[0]).then(_ => '0x' + _.toString('hex')).then(BigInt) > 0n);
+        assert.ok(await token.balanceOf(accounts[0]).then(toBigInt) > 0n);
     })
 
     it("Should verify that post-mint NFT has been destroyed and cannot be reused", async () => {
@@ -133,23 +128,20 @@ contract("XENFT", async accounts => {
     })
 
     it("Should generate SVG of a redeemed NFT", async () => {
-        //console.log(await xeNFT.genSVG(1));
+        //extraPrint && console.log(await xeNFT.genSVG(1));
     })
 
     it("Should perform another bulkClaimRank operation with regular count", async () => {
         const newVirtualMinters = [];
-
-        for await(const i of Array(Math.floor(Math.random() * 100)).fill(null)) {
-            await timeMachine.advanceBlock();
-        }
-        const res = await xeNFT.bulkClaimRank(countRegular, term + 20, { from: accounts[1] });
+       const countRegular = 110;
+        const res = await xeNFT.bulkClaimRank(countRegular, term2, { from: accounts[1] });
         assert.ok(res.receipt.rawLogs.length === countRegular + 2);
-        console.log('      gas used', res.receipt.gasUsed.toLocaleString());
+        extraPrint && console.log('      gas used', res.receipt.gasUsed.toLocaleString());
         res.receipt.rawLogs.slice(0, countRegular).forEach(log => {
             newVirtualMinters.push(log.topics[1].replace('000000000000000000000000', ''))
         })
         tokenId = BigInt(res.receipt.rawLogs[countRegular]?.topics[3]);
-        assert.ok(tokenId === 10_001n);
+        assert.ok(tokenId === tokenIdRegular + 1n);
         assert.ok(newVirtualMinters.length === countRegular);
         for (let i = 0; i < countRegular; i++) {
             assert.ok(virtualMinters[i] !== newVirtualMinters[i]);
@@ -161,7 +153,7 @@ contract("XENFT", async accounts => {
         assert.ok(encodedStr.startsWith('data:application/json;base64,'));
         const base64str = encodedStr.replace('data:application/json;base64,', '');
         const decodedStr = Buffer.from(base64str, 'base64').toString('utf8');
-        console.log(decodedStr)
+        extraPrint === '2' && console.log(decodedStr)
         const metadata = JSON.parse(decodedStr.replace(/\n/, ''));
         assert.ok('name' in metadata);
         assert.ok('description' in metadata);
@@ -173,7 +165,7 @@ contract("XENFT", async accounts => {
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();
         assert.ok(decodedImage.startsWith('<svg'));
         assert.ok(decodedImage.endsWith('</svg>'));
-        console.log(decodedImage);
+        extraPrint === '2' && console.log(decodedImage);
     })
 
     it("NFT non-owner should NOT be able to transfer NFT ownership to another account", async () => {
@@ -195,14 +187,14 @@ contract("XENFT", async accounts => {
     })
 
     it("Should perform bulkClaimMintReward operation for (new) eligible NFT owner", async () => {
-        await timeMachine.advanceTime((term + 20) * 24 * 3600 + 3600);
+        await timeMachine.advanceTime((term2 + 20) * 24 * 3600 + 3600);
         await timeMachine.advanceBlock();
         await assert.rejects(() => xeNFT.bulkClaimMintReward(tokenId, accounts[3], { from: accounts[1] }));
-        await assert.rejects(() => xeNFT.bulkClaimMintReward(tokenId + 1n, accounts[3], { from: accounts[0] }));
+        await assert.rejects(() => xeNFT.bulkClaimMintReward(tokenId + 2n, accounts[3], { from: accounts[0] }));
         const res = await xeNFT.bulkClaimMintReward(tokenId, accounts[3], { from: accounts[0] });
-        console.log('      gas used', res.receipt.gasUsed.toLocaleString());
+        extraPrint && console.log('      gas used', res.receipt.gasUsed.toLocaleString());
         assert.ok(await token.activeMinters().then(_ => _.toNumber()) === 0);
-        assert.ok(await token.balanceOf(accounts[3]).then(_ => '0x' + _.toString('hex')).then(BigInt) > 0n);
+        assert.ok(await token.balanceOf(accounts[3]).then(toBigInt) > 0n);
     })
 
 })

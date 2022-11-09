@@ -23,9 +23,9 @@ pragma solidity ^0.8.10;
 */
 
 /**
-   @dev  a library to supply a XEN quote based on its id
+   @dev  a library to supply a XEN string data based on params
 */
-library Quotes {
+library StringData {
     uint256 public constant QUOTES_COUNT = 12;
     uint256 public constant QUOTE_LENGTH = 66;
     bytes public constant QUOTES =
@@ -43,7 +43,21 @@ library Quotes {
             '"Your past does not equal your future." - Tony Robbins            '
             '"Be the path. Do not seek it." - Yara Tschallener                 '
         );
-
+    uint256 public constant SERIES_COUNT = 10;
+    uint256 public constant SERIES_NAME_LENGTH = 10;
+    bytes public constant SERIES =
+        bytes(
+            'Ruby      '    // 0
+            'Opal      '    // 1
+            'Topaz     '    // 2
+            'Emerald   '    // 3
+            'Aquamarine'    // 4
+            'Sapphire  '    // 5
+            'Amethyst  '    // 6
+            'Xenturion '    // 7
+            'Limited   '    // 8
+            'Rare      '    // 9
+        );
     /**
         @dev    Solidity doesn't yet support slicing of byte arrays anywhere outside of calldata,
                 therefore we make a hack by supplying our local constant packed string array as calldata
@@ -51,5 +65,10 @@ library Quotes {
     function getQuote(bytes calldata quotes, uint256 index) external pure returns (string memory) {
         if (index > QUOTES_COUNT - 1) return string(quotes[0:QUOTE_LENGTH]);
         return string(quotes[index * QUOTE_LENGTH:(index + 1) * QUOTE_LENGTH]);
+    }
+
+    function getSeriesName(bytes calldata names, uint256 index) external pure returns (string memory) {
+        if (index < SERIES_COUNT) return string(names[index * SERIES_NAME_LENGTH:(index + 1) * SERIES_NAME_LENGTH]);
+        return '';
     }
 }
