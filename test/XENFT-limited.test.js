@@ -9,6 +9,8 @@ const XENCrypto = artifacts.require("XENCrypto");
 // const XENCrypto = artifacts.require("XENCryptoPreminted");
 const XENFT = artifacts.require("XENFT");
 
+const { burnRates, rareCounts } = require('../config/specialNFTs.js');
+
 require('dotenv').config();
 
 const extraPrint = process.env.EXTRA_PRINT;
@@ -57,7 +59,7 @@ contract("XENFT --- Limited Edition", async accounts => {
     });
 
     it("Should perform bulkClaimRankLimited operation", async () => {
-        burning = 100_000_000n * ether;
+        burning = burnRates[3] * ether;
         await token.approve(xeNFT.address, burning, { from: accounts[1] });
         const res = await xeNFT.bulkClaimRankLimited(countLimited, term, burning, { from: accounts[1] });
         assert.ok(res.receipt.rawLogs.length === countLimited + 4);
@@ -67,9 +69,9 @@ contract("XENFT --- Limited Edition", async accounts => {
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited + 2]?.topics[3]);
         // extraPrint && console.log('      tokenId', tokenId);
-        assert.ok(await xeNFT.rareSeriesCounters(3).then(_ => _.toNumber()) === 3_002);
-        assert.ok(await xeNFT.rareSeriesCounters(4).then(_ => _.toNumber()) === 6_001);
-        assert.ok(tokenId === 3_001n);
+        assert.ok(await xeNFT.rareSeriesCounters(3).then(_ => _.toNumber()) === rareCounts[2] + 1 + 1);
+        assert.ok(await xeNFT.rareSeriesCounters(4).then(_ => _.toNumber()) === rareCounts[3] + 1);
+        assert.ok(tokenId === BigInt(rareCounts[2]) + 1n);
         assert.ok(virtualMinters.length === countLimited);
     })
 
@@ -108,7 +110,7 @@ contract("XENFT --- Limited Edition", async accounts => {
 
     it("Should perform bulkClaimRankLimited operation 2", async () => {
         virtualMinters = []
-        burning = 1_000_000n * ether;
+        burning = burnRates[5] * ether;
         await token.approve(xeNFT.address, burning, { from: accounts[1] });
         const res = await xeNFT.bulkClaimRankLimited(countLimited, term, burning, { from: accounts[1] });
         assert.ok(res.receipt.rawLogs.length === countLimited + 4);
@@ -118,8 +120,8 @@ contract("XENFT --- Limited Edition", async accounts => {
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited + 2]?.topics[3]);
         // extraPrint && console.log('      tokenId', tokenId);
-        assert.ok(await xeNFT.rareSeriesCounters(3).then(_ => _.toNumber()) === 3_002);
-        assert.ok(await xeNFT.rareSeriesCounters(4).then(_ => _.toNumber()) === 6_001);
+        assert.ok(await xeNFT.rareSeriesCounters(3).then(_ => _.toNumber()) === rareCounts[2] + 1 + 1);
+        assert.ok(await xeNFT.rareSeriesCounters(4).then(_ => _.toNumber()) === rareCounts[3] + 1);
         assert.ok(tokenId === 10_002n);
         assert.ok(virtualMinters.length === countLimited);
     })

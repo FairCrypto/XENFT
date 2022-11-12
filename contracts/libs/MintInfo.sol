@@ -14,7 +14,6 @@ pragma solidity ^0.8.10;
 //          [0-5] powerSeriesIdx
 //      | redeemed (uint8)
 library MintInfo {
-
     /**
         @dev helper to convert Bool to U256 type and make compiler happy
      */
@@ -27,9 +26,15 @@ library MintInfo {
     /**
         @dev encodes MintInfo record from its props
      */
-    function encodeMintInfo(uint256 term, uint256 maturityTs, uint256 rank, uint256 amp, uint256 eaa, uint256 series, bool redeemed)
-        public pure returns (uint256 info)
-    {
+    function encodeMintInfo(
+        uint256 term,
+        uint256 maturityTs,
+        uint256 rank,
+        uint256 amp,
+        uint256 eaa,
+        uint256 series,
+        bool redeemed
+    ) public pure returns (uint256 info) {
         info = info | toU256(redeemed);
         info = info | ((series & 0xFF) << 8);
         info = info | ((eaa & 0xFFFF) << 16);
@@ -106,7 +111,15 @@ library MintInfo {
     /**
         @dev extracts `redeemed` prop from encoded MintInfo
      */
-    function getSeries(uint256 info) public pure returns (uint256 series, bool rare, bool limited) {
+    function getSeries(uint256 info)
+        public
+        pure
+        returns (
+            uint256 series,
+            bool rare,
+            bool limited
+        )
+    {
         (, , , , , series, rare, limited, ) = decodeMintInfo(info);
     }
 
@@ -116,5 +129,4 @@ library MintInfo {
     function getRedeemed(uint256 info) public pure returns (bool redeemed) {
         (, , , , , , , , redeemed) = decodeMintInfo(info);
     }
-
 }

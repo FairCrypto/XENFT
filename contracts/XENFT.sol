@@ -60,7 +60,7 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     uint256 public tokenIdCounter = RARE_SERIES_COUNT;
     uint256[] public specialSeriesBurnRates;
     uint256[] public rareSeriesTokenLimits;
-    uint256[] public rareSeriesCounters = [ 1, 1, 1, 1, 1 ];
+    uint256[] public rareSeriesCounters = [1, 1, 1, 1, 1];
     // uint256 public immutable limitedSeriesBurnRate;
 
     // pointer to XEN Crypto contract
@@ -90,7 +90,11 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         @dev    Creates XENFT contract, writing down immutable address for XEN Crypto main contract
                 and original(self) address to distinguish between proxy clones
      */
-    constructor(address xenCrypto_, uint256[] memory burnRates_, uint256[] memory tokenLimits_) {
+    constructor(
+        address xenCrypto_,
+        uint256[] memory burnRates_,
+        uint256[] memory tokenLimits_
+    ) {
         require(xenCrypto_ != address(0));
         _original = address(this);
         _deployer = msg.sender;
@@ -99,7 +103,7 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         specialSeriesBurnRates = burnRates_;
         rareSeriesTokenLimits = tokenLimits_;
         // limitedSeriesBurnRate = burnRate2_;
-        for (uint i = 1; i < rareSeriesTokenLimits.length; i++) {
+        for (uint256 i = 1; i < rareSeriesTokenLimits.length; i++) {
             rareSeriesCounters[i] = rareSeriesTokenLimits[i - 1] + 1;
         }
     }
@@ -142,8 +146,8 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     /**
         @dev determines power group index
      */
-    function _powerGroup(uint256 VMUs, uint256 term) private pure returns (uint256) {
-        return (VMUs * term) / POWER_GROUP_SIZE;
+    function _powerGroup(uint256 vmus, uint256 term) private pure returns (uint256) {
+        return (vmus * term) / POWER_GROUP_SIZE;
     }
 
     /**
@@ -173,7 +177,7 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
             Base64.encode(Metadata.svgData(tokenId, count, info, address(xenCrypto), burned)),
             '",',
             '"attributes": ',
-            Metadata.attributes(count, info),
+            Metadata.attributes(count, info, burned),
             "}"
         );
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(dataURI)));
@@ -210,7 +214,13 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     /**
         @dev internal helper to collect params and encode MintInfo
      */
-    function _mintInfo(address proxy, uint256 count, uint256 term, uint256 burning, uint256 tokenId) private view returns (uint256) {
+    function _mintInfo(
+        address proxy,
+        uint256 count,
+        uint256 term,
+        uint256 burning,
+        uint256 tokenId
+    ) private view returns (uint256) {
         // if (count > LIMITED_SERIES_VMU_THRESHOLD1) return 8;
         // if (count > RARE_SERIES_VMU_THRESHOLD) return 9;
         bool rare = isRare(tokenId);
@@ -225,7 +235,7 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         @dev internal helper to determine limited tier based on XEN to be burned
      */
     function _limitedTier(uint256 burning) private view returns (uint256) {
-        for(uint i = 0; i < specialSeriesBurnRates.length; i++) {
+        for (uint256 i = 0; i < specialSeriesBurnRates.length; i++) {
             if (burning > specialSeriesBurnRates[i] - 1) {
                 return i + 1;
             }
@@ -239,7 +249,12 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     /**
         @dev internal torrent interface. initiates Bulk Mint (Torrent) Operation
      */
-    function _bulkClaimRank(uint256 count, uint256 term, uint256 tokenId, uint256 burning) private {
+    function _bulkClaimRank(
+        uint256 count,
+        uint256 term,
+        uint256 tokenId,
+        uint256 burning
+    ) private {
         bytes memory bytecode = bytes.concat(
             bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
             bytes20(address(this)),
@@ -269,11 +284,11 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         // burn possibility has already been verified
         uint256 tier = _limitedTier(burning);
         if (tier == rareSeriesTokenLimits.length + 1) {
-            require(block.timestamp < genesisTs + LIMITED_SERIES_TIME_THRESHOLD, 'XENFT: limited time expired');
+            require(block.timestamp < genesisTs + LIMITED_SERIES_TIME_THRESHOLD, "XENFT: limited time expired");
             return tokenIdCounter++;
         }
         if (count > RARE_SERIES_VMU_THRESHOLD && burning > 0) {
-            require(rareSeriesCounters[tier - 1] < rareSeriesTokenLimits[tier], 'XENFT: tier sold out');
+            require(rareSeriesCounters[tier - 1] < rareSeriesTokenLimits[tier], "XENFT: tier sold out");
             return rareSeriesCounters[tier - 1]++;
         }
         return tokenIdCounter++;
@@ -296,16 +311,23 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     /**
         @dev public torrent interface. initiates Bulk Mint (Torrent) Operation (limited series)
      */
-    function bulkClaimRankLimited(uint256 count, uint256 term, uint256 burning) public returns (uint256) {
-        require(_tokenId == 0, 'XENFT: reentrancy detected');
+    function bulkClaimRankLimited(
+        uint256 count,
+        uint256 term,
+        uint256 burning
+    ) public returns (uint256) {
+        require(_tokenId == 0, "XENFT: reentrancy detected");
         require(count > 0, "XENFT: Illegal count");
         require(term > 0, "XENFT: Illegal term");
         // TODO: disambiguate between rare and limited !!!
-        require(burning > specialSeriesBurnRates[specialSeriesBurnRates.length - 1] - 1, "XENFT: not enough burn amount");
+        require(
+            burning > specialSeriesBurnRates[specialSeriesBurnRates.length - 1] - 1,
+            "XENFT: not enough burn amount"
+        );
         uint256 balance = IERC20(xenCrypto).balanceOf(msg.sender);
-        require(balance > burning - 1, 'XENFT: not enough XEN balance');
+        require(balance > burning - 1, "XENFT: not enough XEN balance");
         uint256 approved = IERC20(xenCrypto).allowance(msg.sender, address(this));
-        require(approved > burning - 1, 'XENFT: not enough XEN balance approved for burn');
+        require(approved > burning - 1, "XENFT: not enough XEN balance approved for burn");
         _tokenId = _getTokenId(count, burning);
         _bulkClaimRank(count, term, _tokenId, burning);
         IBurnableToken(xenCrypto).burn(msg.sender, burning);
@@ -316,8 +338,8 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         @dev implements IBurnRedeemable interface for burning XEN and completing Bulk Mint for limited series
      */
     function onTokenBurned(address user, uint256 burned) external {
-        require(_tokenId > 0, 'XENFT: illegal callback state');
-        require(msg.sender == address(xenCrypto), 'XENFT: illegal callback caller');
+        require(_tokenId > 0, "XENFT: illegal callback state");
+        require(msg.sender == address(xenCrypto), "XENFT: illegal callback caller");
         _safeMint(user, _tokenId);
         _ownedTokens[user].addItem(_tokenId);
         xenBurned[_tokenId] = burned;
@@ -378,13 +400,12 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
             IERC165(_msgSender()).supportsInterface(type(IBurnRedeemable).interfaceId),
             "XENFT burn: not a supported contract"
         );
-        require(user != address(0), 'XENFT burn: illegal owner address');
-        require(tokenId > 0, 'XENFT burn: illegal tokenId');
-        require(_isApprovedOrOwner(_msgSender(), tokenId), 'XENFT burn: not an approved operator');
-        require(ownerOf(tokenId) == user, 'XENFT burn: user is not tokenId owner');
+        require(user != address(0), "XENFT burn: illegal owner address");
+        require(tokenId > 0, "XENFT burn: illegal tokenId");
+        require(_isApprovedOrOwner(_msgSender(), tokenId), "XENFT burn: not an approved operator");
+        require(ownerOf(tokenId) == user, "XENFT burn: user is not tokenId owner");
         _ownedTokens[user].removeItem(tokenId);
         _burn(tokenId);
         IBurnRedeemable(_msgSender()).onTokenBurned(user, tokenId);
     }
-
 }

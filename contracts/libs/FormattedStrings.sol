@@ -26,7 +26,7 @@ library FormattedStrings {
         while (value != 0) {
             digits -= 1;
             if (pos == 3) {
-                buffer[digits] = ',';
+                buffer[digits] = ",";
                 pos = 0;
             } else {
                 buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));

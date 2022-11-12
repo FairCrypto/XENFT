@@ -12,7 +12,6 @@ import "./SVG.sol";
     @dev Library contains methods to generate on-chain NFT metadata
 */
 library Metadata {
-
     using DateTime for uint256;
     using MintInfo for uint256;
     using Strings for uint256;
@@ -34,31 +33,31 @@ library Metadata {
     // The following pure methods returning arrays are workaround to use array constants,
     // not yet available in Solidity
 
-    function POWER_GROUP_COLORS() private pure returns (uint256[8] memory) {
-        return [ uint256(360), 1, 30, 60, 120, 180, 240, 300 ];
+    function _powerGroupColors() private pure returns (uint256[8] memory) {
+        return [uint256(360), 1, 30, 60, 120, 180, 240, 300];
     }
 
-    function HUES_LIMITED1() private pure returns (uint256[3] memory) {
+    function _huesRare() private pure returns (uint256[3] memory) {
         return [uint256(169), 210, 305];
     }
 
-    function HUES_LIMITED2() private pure returns (uint256[3] memory) {
+    function _huesLimited() private pure returns (uint256[3] memory) {
         return [uint256(263), 0, 42];
     }
 
-    function STOP_OFFSETS() private pure returns (uint256[3] memory) {
+    function _stopOffsets() private pure returns (uint256[3] memory) {
         return [uint256(10), 50, 90];
     }
 
-    function GRAD_COORDS_REGULAR() private pure returns (uint256[4] memory) {
+    function _gradColorsRegular() private pure returns (uint256[4] memory) {
         return [uint256(150), 150, 20, 20];
     }
 
-    function GRAD_COORDS_BLACK() private pure returns (uint256[4] memory) {
+    function _gradColorsBlack() private pure returns (uint256[4] memory) {
         return [uint256(100), 100, 20, 20];
     }
 
-    function GRAD_COORDS_LIMITED() private pure returns (uint256[4] memory) {
+    function _gradColorsSpecial() private pure returns (uint256[4] memory) {
         return [uint256(100), 100, 0, 0];
     }
 
@@ -66,45 +65,47 @@ library Metadata {
         @dev private helper to determine XENFT group index by its power
              (power = count of VMUs * mint term in days)
      */
-    function _powerGroup(uint256 VMUs, uint256 term) private pure returns (uint256) {
-        return (VMUs * term) / POWER_GROUP_SIZE;
+    function _powerGroup(uint256 vmus, uint256 term) private pure returns (uint256) {
+        return (vmus * term) / POWER_GROUP_SIZE;
     }
 
     /**
         @dev private helper to generate SVG gradients for limited XENFT series
      */
     function _limitedSeriesGradients(bool rare) private pure returns (SVG.Gradient[] memory gradients) {
-        uint256[3] memory specialColors = rare ? HUES_LIMITED1() : HUES_LIMITED2();
+        uint256[3] memory specialColors = rare ? _huesRare() : _huesLimited();
         SVG.Color[] memory colors = new SVG.Color[](3);
         for (uint256 i = 0; i < colors.length; i++) {
             colors[i] = SVG.Color({
-            h: specialColors[i],
-            s: BASE_SATURATION,
-            l: LIMITED_LUMINOSITY,
-            a: DEFAULT_OPACITY,
-            off: STOP_OFFSETS()[i]
+                h: specialColors[i],
+                s: BASE_SATURATION,
+                l: LIMITED_LUMINOSITY,
+                a: DEFAULT_OPACITY,
+                off: _stopOffsets()[i]
             });
         }
         gradients = new SVG.Gradient[](1);
-        gradients[0] = SVG.Gradient({colors: colors, id: 0, coords: GRAD_COORDS_LIMITED()});
+        gradients[0] = SVG.Gradient({colors: colors, id: 0, coords: _gradColorsSpecial()});
     }
 
     /**
         @dev private helper to generate SVG gradients for regular XENFT series
      */
-    function _regularSeriesGradients(uint256 VMUs, uint256 term) private pure returns (SVG.Gradient[] memory gradients) {
+    function _regularSeriesGradients(uint256 vmus, uint256 term)
+        private
+        pure
+        returns (SVG.Gradient[] memory gradients)
+    {
         SVG.Color[] memory colors = new SVG.Color[](2);
-        uint256 powerHue = term * VMUs > MAX_POWER
-            ? NO_COLOR
-            : 1 + (term * VMUs * COLORS_FULL_SCALE) / MAX_POWER;
+        uint256 powerHue = term * vmus > MAX_POWER ? NO_COLOR : 1 + (term * vmus * COLORS_FULL_SCALE) / MAX_POWER;
         // group
-        uint256 groupHue = POWER_GROUP_COLORS()[_powerGroup(VMUs, term) > 7 ? 7 : _powerGroup(VMUs, term)];
+        uint256 groupHue = _powerGroupColors()[_powerGroup(vmus, term) > 7 ? 7 : _powerGroup(vmus, term)];
         colors[0] = SVG.Color({
             h: groupHue,
             s: groupHue == NO_COLOR ? 0 : GROUP_SATURATION,
             l: groupHue == NO_COLOR ? 0 : GROUP_LUMINOSITY,
             a: DEFAULT_OPACITY,
-            off: STOP_OFFSETS()[0]
+            off: _stopOffsets()[0]
         });
         // power
         colors[1] = SVG.Color({
@@ -112,13 +113,13 @@ library Metadata {
             s: powerHue == NO_COLOR ? 0 : BASE_SATURATION,
             l: powerHue == NO_COLOR ? 0 : BASE_LUMINOSITY,
             a: DEFAULT_OPACITY,
-            off: STOP_OFFSETS()[2]
+            off: _stopOffsets()[2]
         });
         gradients = new SVG.Gradient[](1);
         gradients[0] = SVG.Gradient({
             colors: colors,
             id: 0,
-            coords: groupHue == NO_COLOR ? GRAD_COORDS_BLACK() : GRAD_COORDS_REGULAR()
+            coords: groupHue == NO_COLOR ? _gradColorsBlack() : _gradColorsRegular()
         });
     }
 
@@ -127,11 +128,7 @@ library Metadata {
      */
     function _cRankProp(uint256 rank, uint256 count) private pure returns (bytes memory) {
         if (count == 1) return abi.encodePacked(rank.toString());
-        return abi.encodePacked(
-            rank.toString(),
-            '..',
-            (rank + count - 1).toString()
-        );
+        return abi.encodePacked(rank.toString(), "..", (rank + count - 1).toString());
     }
 
     // PUBLIC INTERFACE
@@ -139,7 +136,13 @@ library Metadata {
     /**
         @dev public interface to generate SVG image based on XENFT params
      */
-    function svgData(uint256 tokenId, uint256 count, uint256 info, address token, uint256 burned) external view returns (bytes memory) {
+    function svgData(
+        uint256 tokenId,
+        uint256 count,
+        uint256 info,
+        address token,
+        uint256 burned
+    ) external view returns (bytes memory) {
         string memory symbol = IERC20Metadata(token).symbol();
         (uint256 seriesIdx, bool rare, bool limited) = info.getSeries();
         SVG.SvgParams memory params = SVG.SvgParams({
@@ -166,9 +169,18 @@ library Metadata {
     /**
         @dev private helper to construct attributes portion of NFT metadata
      */
-    function attributes(uint256 count, uint256 mintInfo) external pure returns (bytes memory) {
-        (, uint256 maturityTs, uint256 rank, uint256 amp, uint256 eaa, uint256 series, bool rare, bool limited, bool redeemed)
-        = MintInfo.decodeMintInfo(mintInfo);
+    function attributes(uint256 count, uint256 mintInfo, uint256 burned) external pure returns (bytes memory) {
+        (
+            ,
+            uint256 maturityTs,
+            uint256 rank,
+            uint256 amp,
+            uint256 eaa,
+            uint256 series,
+            bool rare,
+            bool limited,
+            bool redeemed
+        ) = MintInfo.decodeMintInfo(mintInfo);
         bytes memory attr1 = abi.encodePacked(
             '{"trait_type":"Series","value":"',
             StringData.getSeriesName(StringData.SERIES, series),
@@ -196,16 +208,13 @@ library Metadata {
         );
         bytes memory attr3 = abi.encodePacked(
             '{"trait_type":"limited","value":"',
-                limited ? "yes" : "no",
+            limited ? "yes" : "no",
             '"},'
             '{"trait_type":"rare","value":"',
-                rare ? "yes" : "no",
-            //'"},'
-            //'{"trait_type":"Maturity","display_type":"date","value":"',
-            //maturityTs.toString(),
-            //'"},'
-            //'{"trait_type":"Redeemed","value":"',
-            //redeemed ? "yes" : "no",
+            rare ? "yes" : "no",
+            '"},'
+            '{"trait_type":"XEN Burned","value":"',
+            burned.toString(),
             '"}'
         );
         return abi.encodePacked("[", attr1, attr2, attr3, "]");
@@ -215,5 +224,4 @@ library Metadata {
     function formattedString(uint256 n) public pure returns (string memory) {
         return FormattedStrings.toFormattedString(n);
     }
-
 }

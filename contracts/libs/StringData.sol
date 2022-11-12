@@ -47,17 +47,18 @@ library StringData {
     uint256 public constant SERIES_NAME_LENGTH = 10;
     bytes public constant SERIES =
         bytes(
-            'Ruby      '    // 0
-            'Opal      '    // 1
-            'Topaz     '    // 2
-            'Emerald   '    // 3
-            'Aquamarine'    // 4
-            'Sapphire  '    // 5
-            'Amethyst  '    // 6
-            'Xenturion '    // 7
-            'Limited   '    // 8
-            'Rare      '    // 9
+            "Ruby      "
+            "Opal      "
+            "Topaz     "
+            "Emerald   "
+            "Aquamarine"
+            "Sapphire  "
+            "Amethyst  "
+            "Xenturion "
+            "Limited   "
+            "Rare      "
         );
+
     /**
         @dev    Solidity doesn't yet support slicing of byte arrays anywhere outside of calldata,
                 therefore we make a hack by supplying our local constant packed string array as calldata
@@ -69,6 +70,6 @@ library StringData {
 
     function getSeriesName(bytes calldata names, uint256 index) external pure returns (string memory) {
         if (index < SERIES_COUNT) return string(names[index * SERIES_NAME_LENGTH:(index + 1) * SERIES_NAME_LENGTH]);
-        return '';
+        return "";
     }
 }
