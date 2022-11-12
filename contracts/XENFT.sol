@@ -370,6 +370,9 @@ contract XENFT is IXENTorrent, IXENProxying, ERC721("XENFT", "XENFT") {
         uint256 tokenId = count > LIMITED_SERIES_VMU_THRESHOLD && limitedSeriesCounter < LIMITED_SERIES_COUNT
             ? limitedSeriesCounter
             : tokenIdCounter;
+        if (tokenId < LIMITED_SERIES_COUNT) {
+            require(tx.origin == msg.sender, "XENFT: Illegal caller");
+        }
         for (uint256 i = 1; i < count + 1; i++) {
             bytes32 salt = keccak256(abi.encodePacked(i, tokenId));
             assembly {
