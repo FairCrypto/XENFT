@@ -4,15 +4,11 @@ pragma solidity ^0.8.10;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-// TODO: restore after testing
 import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
-// import "./XENCrypto.sol";
 import "./interfaces/IXENTorrent.sol";
 import "./interfaces/IXENProxying.sol";
-// import "./libs/SVG.sol";
 import "./libs/MintInfo.sol";
 import "./libs/Metadata.sol";
-//import "./libs/DateTime.sol";
 import "./libs/Array.sol";
 
 /*
@@ -382,7 +378,10 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
             IERC165(_msgSender()).supportsInterface(type(IBurnRedeemable).interfaceId),
             "XENFT burn: not a supported contract"
         );
-        require(_isApprovedOrOwner(user, tokenId));
+        require(user != address(0), 'XENFT burn: illegal owner address');
+        require(tokenId > 0, 'XENFT burn: illegal tokenId');
+        require(_isApprovedOrOwner(_msgSender(), tokenId), 'XENFT burn: not an approved operator');
+        require(ownerOf(tokenId) == user, 'XENFT burn: user is not tokenId owner');
         _ownedTokens[user].removeItem(tokenId);
         _burn(tokenId);
         IBurnRedeemable(_msgSender()).onTokenBurned(user, tokenId);
