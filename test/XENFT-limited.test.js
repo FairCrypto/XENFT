@@ -3,10 +3,8 @@
 const assert = require('assert');
 const timeMachine = require('ganache-time-traveler');
 const {toBigInt} = require("../src/utils");
-const {formatEther} = require("ethers/lib/utils")
 
 const XENCrypto = artifacts.require("XENCrypto");
-// const XENCrypto = artifacts.require("XENCryptoPreminted");
 const XENFT = artifacts.require("XENFT");
 
 const { burnRates, rareCounts } = require('../config/specialNFTs.js');
