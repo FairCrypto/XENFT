@@ -177,7 +177,7 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
             Base64.encode(Metadata.svgData(tokenId, count, info, address(xenCrypto), burned)),
             '",',
             '"attributes": ',
-            Metadata.attributes(count, info, burned),
+            Metadata.attributes(count, burned, info),
             "}"
         );
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(dataURI)));

@@ -166,10 +166,75 @@ library Metadata {
         return SVG.image(params, _regularSeriesGradients(count, info.getTerm()), quoteIdx, rare, limited);
     }
 
+    function _attr1(
+        uint256 count,
+        uint256 rank,
+        uint256 series
+    ) private pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                '{"trait_type":"Series","value":"',
+                StringData.getSeriesName(StringData.SERIES, series),
+                '"},'
+                '{"trait_type":"VMUs","value":"',
+                count.toString(),
+                '"},'
+                '{"trait_type":"cRank","value":"',
+                _cRankProp(rank, count),
+                '"},'
+            );
+    }
+
+    function _attr2(
+        uint256 amp,
+        uint256 eaa,
+        uint256 maturityTs,
+        bool redeemed
+    ) private pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                '{"trait_type":"AMP","value":"',
+                amp.toString(),
+                '"},'
+                '{"trait_type":"EAA (%)","value":"',
+                (eaa / 10).toString(),
+                '"},'
+                '{"trait_type":"Maturity","display_type":"date","value":"',
+                maturityTs.toString(),
+                '"},'
+                '{"trait_type":"Redeemed","value":"',
+                redeemed ? "yes" : "no",
+                '"},'
+            );
+    }
+
+    function _attr3(
+        bool limited,
+        bool rare,
+        uint256 burned
+    ) private pure returns (bytes memory) {
+        return
+            abi.encodePacked(
+                '{"trait_type":"limited","value":"',
+                limited ? "yes" : "no",
+                '"},'
+                '{"trait_type":"rare","value":"',
+                rare ? "yes" : "no",
+                '"},'
+                '{"trait_type":"XEN Burned","value":"',
+                burned.toString(),
+                '"}'
+            );
+    }
+
     /**
-        @dev private helper to construct attributes portion of NFT metadata
+@dev private helper to construct attributes portion of NFT metadata
      */
-    function attributes(uint256 count, uint256 mintInfo, uint256 burned) external pure returns (bytes memory) {
+    function attributes(
+        uint256 count,
+        uint256 burned,
+        uint256 mintInfo
+    ) external pure returns (bytes memory) {
         (
             ,
             uint256 maturityTs,
@@ -181,43 +246,14 @@ library Metadata {
             bool limited,
             bool redeemed
         ) = MintInfo.decodeMintInfo(mintInfo);
-        bytes memory attr1 = abi.encodePacked(
-            '{"trait_type":"Series","value":"',
-            StringData.getSeriesName(StringData.SERIES, series),
-            '"},'
-            '{"trait_type":"VMUs","value":"',
-            count.toString(),
-            '"},'
-            '{"trait_type":"cRank","value":"',
-            _cRankProp(rank, count),
-            '"},'
-        );
-        bytes memory attr2 = abi.encodePacked(
-            '{"trait_type":"AMP","value":"',
-            amp.toString(),
-            '"},'
-            '{"trait_type":"EAA (%)","value":"',
-            (eaa / 10).toString(),
-            '"},'
-            '{"trait_type":"Maturity","display_type":"date","value":"',
-            maturityTs.toString(),
-            '"},'
-            '{"trait_type":"Redeemed","value":"',
-            redeemed ? "yes" : "no",
-            '"},'
-        );
-        bytes memory attr3 = abi.encodePacked(
-            '{"trait_type":"limited","value":"',
-            limited ? "yes" : "no",
-            '"},'
-            '{"trait_type":"rare","value":"',
-            rare ? "yes" : "no",
-            '"},'
-            '{"trait_type":"XEN Burned","value":"',
-            burned.toString(),
-            '"}'
-        );
-        return abi.encodePacked("[", attr1, attr2, attr3, "]");
+        return
+            abi.encodePacked(
+                "[",
+                _attr1(count, rank, series),
+                _attr2(amp, eaa, maturityTs, redeemed),
+                _attr3(limited, rare, burned),
+                "]"
+            );
     }
 
     // TODO: delete after testing
