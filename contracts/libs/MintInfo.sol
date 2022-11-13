@@ -35,12 +35,12 @@ library MintInfo {
         uint256 series,
         bool redeemed
     ) public pure returns (uint256 info) {
-        info = info | toU256(redeemed);
+        info = info | (toU256(redeemed) & 0xFF);
         info = info | ((series & 0xFF) << 8);
         info = info | ((eaa & 0xFFFF) << 16);
         info = info | ((amp & 0xFFFF) << 32);
-        info = info | ((rank & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) << 48);
-        info = info | ((maturityTs & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) << 176);
+        info = info | ((rank & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) << 48);
+        info = info | ((maturityTs & 0xFFFFFFFFFFFFFFFF) << 176);
         info = info | ((term & 0xFFFF) << 240);
     }
 
