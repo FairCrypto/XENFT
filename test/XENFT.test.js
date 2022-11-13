@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 const assert = require('assert');
+const { Contract } = require('ethers');
+const { Web3Provider } = require('@ethersproject/providers');
 const timeMachine = require('ganache-time-traveler');
 const {toBigInt} = require("../src/utils");
 
@@ -36,6 +38,11 @@ contract("XENFT --- Standard Edition", async accounts => {
         } catch (e) {
             console.error(e)
         }
+    })
+
+    it("Should read XENFT symbol and name", async () => {
+        assert.ok(await xeNFT.name() === 'XEN Torrent');
+        assert.ok(await xeNFT.symbol() === 'XENT');
     })
 
     it("Should read XEN Crypto Address params", async () => {
@@ -76,9 +83,30 @@ contract("XENFT --- Standard Edition", async accounts => {
         //console.log(await token.activeMinters().then(_ => _.toNumber()));
     })
 
-    it("Should generate SVG", async () => {
-        //extraPrint && console.log(await xeNFT.genSVG(1));
+    it("Should not be able to access minters' transactional interface directly", async () => {
+        const provider = new Web3Provider(web3.currentProvider);
+        const vmu0 = new Contract(virtualMinters[0], xeNFT.abi, provider.getSigner(4));
+        assert.ok(vmu0.address === virtualMinters[0]);
+        assert.ok(await vmu0.xenCrypto() === xenCryptoAddress);
+        assert.ok(await vmu0.name() === '');
+        assert.ok(await vmu0.symbol() === '');
+        assert.ok(await vmu0.genesisTs().then(_ => _.toNumber()) > genesisTs);
+        await assert.rejects(() => vmu0.callClaimRank(1, { gasLimit: 200_000 }).then(_ => _.wait()));
+        await assert.rejects(() => vmu0.callClaimMintReward(accounts[3], { gasLimit: 100_000 }).then(_ => _.wait()));
+        await assert.rejects(() => vmu0.powerDown().then(_ => _.wait()));
+        await assert.rejects(() => vmu0.bulkClaimRank(1, 1, { gasLimit: 500_000 }).then(_ => _.wait()));
     })
+
+    it("Should not allow burn transaction from EOA", async () => {
+        await assert.rejects(() => xeNFT.burn(accounts[0], tokenId));
+    });
+
+    it("Should not allow using `onTokenBurned` callback directly", async () => {
+        await assert.rejects(
+            () => xeNFT.onTokenBurned(accounts[0], tokenId),
+            'XENFT: illegal callback state'
+        );
+    });
 
     it("Should verify that mint initiator possesses NFT by its tokenId", async () => {
         assert.ok(await xeNFT.ownerOf(tokenId) === accounts[0]);
@@ -122,7 +150,7 @@ contract("XENFT --- Standard Edition", async accounts => {
         assert.ok(await token.balanceOf(accounts[0]).then(toBigInt) > 0n);
     })
 
-    it("Should verify that post-mint NFT has been destroyed and cannot be reused", async () => {
+    it("Should verify that post-mint NFT has been redeemed and cannot be reused", async () => {
         // await assert.rejects(() => xeNFT.ownerOf(tokenId));
         assert.ok(await xeNFT.balanceOf(accounts[0]).then(_ => _.toNumber()) === 1);
     })
