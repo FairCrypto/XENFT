@@ -43,7 +43,7 @@ library StringData {
             '"Your past does not equal your future." - Tony Robbins            '
             '"Be the path. Do not seek it." - Yara Tschallener                 '
         );
-    uint256 public constant SERIES_COUNT = 10;
+    uint256 public constant SERIES_COUNT = 14;
     uint256 public constant SERIES_NAME_LENGTH = 10;
     bytes public constant SERIES =
         bytes(
@@ -57,6 +57,10 @@ library StringData {
             "Xenturion "
             "Limited   "
             "Rare      "
+            "Epic      "
+            "Legendary "
+            "Exotic    "
+            "Xunicorn  "
         );
 
     /**

@@ -14,8 +14,8 @@ module.exports = {
         10_000, // starts from 6_001
         6_000,  // starts from 3_001
         3_000,  // starts from 1_001
-        1_000,  // starts from 101
-        100,    // starts from 1
+        1_000,  // starts from 3
+        2,      // starts from 1
     ],
     Series: {
         COLLECTOR:  0,

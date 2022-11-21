@@ -35,6 +35,9 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     using MintInfo for uint256;
     using Array for uint256[];
 
+    // XENFT common business logic
+    uint256 public constant BLACKOUT_TERM = 7 * 24 * 3600; /* 7 days in sec */
+
     // XENFT limited series params
     uint256 public constant RARE_SERIES_COUNT = 10_001;
     uint256 public constant RARE_SERIES_VMU_THRESHOLD = 99;
@@ -58,10 +61,18 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
 
     // increasing counters for NFT tokenIds, also used as salt for proxies' spinning
     uint256 public tokenIdCounter = RARE_SERIES_COUNT;
+    // 0: Collector
+    // 1: Limited
+    // 2: Rare
+    // 3: Epic
+    // 4: Legendary
+    // 5: Exotic
+    // 6: Xunicorn
     uint256[] public specialSeriesBurnRates;
-    uint256[] public rareSeriesTokenLimits;
-    uint256[] public rareSeriesCounters = [1, 1, 1, 1, 1];
-    // uint256 public immutable limitedSeriesBurnRate;
+    // [0, 0, R1, R2, R3, R4, R5]
+    uint256[] public specialSeriesTokenLimits;
+    // [0, 0, 0 + 1, R1+1, R2+1, R3+1, R4+1]
+    uint256[] public specialSeriesCounters;
 
     // pointer to XEN Crypto contract
     XENCrypto public immutable xenCrypto;
@@ -95,17 +106,19 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         uint256[] memory burnRates_,
         uint256[] memory tokenLimits_
     ) {
-        require(xenCrypto_ != address(0));
+        require(xenCrypto_ != address(0), 'bad address');
+        require(burnRates_.length == tokenLimits_.length && burnRates_.length > 0, 'params mismatch');
         _original = address(this);
         _deployer = msg.sender;
         genesisTs = block.timestamp;
         xenCrypto = XENCrypto(xenCrypto_);
         specialSeriesBurnRates = burnRates_;
-        rareSeriesTokenLimits = tokenLimits_;
-        // limitedSeriesBurnRate = burnRate2_;
-        for (uint256 i = 1; i < rareSeriesTokenLimits.length; i++) {
-            rareSeriesCounters[i] = rareSeriesTokenLimits[i - 1] + 1;
+        specialSeriesTokenLimits = tokenLimits_;
+        specialSeriesCounters = new uint256[](tokenLimits_.length);
+        for (uint256 i = 2; i < specialSeriesBurnRates.length - 1; i++) {
+            specialSeriesCounters[i] = specialSeriesTokenLimits[i + 1] + 1;
         }
+        specialSeriesCounters[specialSeriesBurnRates.length - 1] = 1;
     }
 
     /**
@@ -212,6 +225,18 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     }
 
     /**
+        @dev internal helper to determine limited tier based on XEN to be burned
+     */
+    function _rarityTier(uint256 burning) private view returns (uint256) {
+        for (uint256 i = specialSeriesBurnRates.length - 1; i > 0 ; i--) {
+            if (burning > specialSeriesBurnRates[i] - 1) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    /**
         @dev internal helper to collect params and encode MintInfo
      */
     function _mintInfo(
@@ -221,32 +246,15 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         uint256 burning,
         uint256 tokenId
     ) private view returns (uint256) {
-        // if (count > LIMITED_SERIES_VMU_THRESHOLD1) return 8;
-        // if (count > RARE_SERIES_VMU_THRESHOLD) return 9;
         bool rare = isRare(tokenId);
         uint256 series = _seriesIdx(count, term);
-        if (rare) series = uint8(9) | 0x80;
-        if (burning > 0 && !rare) series = uint8(8) | 0x40;
+        if (rare) series = uint8(7 + _rarityTier(burning)) | 0x80;  // rare series
+        if (burning > 0 && !rare) series = uint8(8) | 0x40;         // limited series
         (, , uint256 maturityTs, uint256 rank, uint256 amp, uint256 eaa) = xenCrypto.userMints(proxy);
         return MintInfo.encodeMintInfo(term, maturityTs, rank, amp, eaa, series, false);
     }
 
-    /**
-        @dev internal helper to determine limited tier based on XEN to be burned
-     */
-    function _limitedTier(uint256 burning) private view returns (uint256) {
-        for (uint256 i = 0; i < specialSeriesBurnRates.length; i++) {
-            if (burning > specialSeriesBurnRates[i] - 1) {
-                return i + 1;
-            }
-        }
-        //if (burning > limitedSeriesBurnRate - 1) {
-        //    return specialSeriesBurnRates.length + 1;
-        //}
-        return 0;
-    }
-
-    /**
+     /**
         @dev internal torrent interface. initiates Bulk Mint (Torrent) Operation
      */
     function _bulkClaimRank(
@@ -282,14 +290,17 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
      */
     function _getTokenId(uint256 count, uint256 burning) private returns (uint256) {
         // burn possibility has already been verified
-        uint256 tier = _limitedTier(burning);
-        if (tier == rareSeriesTokenLimits.length + 1) {
+        uint256 tier = _rarityTier(burning);
+        if (tier == 1) {
+            require(count > RARE_SERIES_VMU_THRESHOLD, 'XENFT: under req VMU count');
             require(block.timestamp < genesisTs + LIMITED_SERIES_TIME_THRESHOLD, "XENFT: limited time expired");
             return tokenIdCounter++;
         }
-        if (count > RARE_SERIES_VMU_THRESHOLD && burning > 0) {
-            require(rareSeriesCounters[tier - 1] < rareSeriesTokenLimits[tier], "XENFT: tier sold out");
-            return rareSeriesCounters[tier - 1]++;
+        if (tier > 1) {
+            require(msg.sender == tx.origin, 'XENFT: only EOA allowed for this category');
+            require(count > RARE_SERIES_VMU_THRESHOLD, 'XENFT: under req VMU count');
+            require(specialSeriesCounters[tier] < specialSeriesTokenLimits[tier] + 1, "XENFT: series sold out");
+            return specialSeriesCounters[tier]++;
         }
         return tokenIdCounter++;
     }
@@ -309,7 +320,7 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     }
 
     /**
-        @dev public torrent interface. initiates Bulk Mint (Torrent) Operation (limited series)
+        @dev public torrent interface. initiates Bulk Mint (Torrent) Operation (special series)
      */
     function bulkClaimRankLimited(
         uint256 count,
@@ -319,9 +330,8 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         require(_tokenId == 0, "XENFT: reentrancy detected");
         require(count > 0, "XENFT: Illegal count");
         require(term > 0, "XENFT: Illegal term");
-        // TODO: disambiguate between rare and limited !!!
         require(
-            burning > specialSeriesBurnRates[specialSeriesBurnRates.length - 1] - 1,
+            burning > specialSeriesBurnRates[1] - 1,
             "XENFT: not enough burn amount"
         );
         uint256 balance = IERC20(xenCrypto).balanceOf(msg.sender);
@@ -378,6 +388,21 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         }
         _setRedeemed(tokenId);
         emit EndTorrent(msg.sender, tokenId, to);
+    }
+
+    /**
+        @dev overrides OZ ERC-721 before transfer hook to check if there's no blackout period
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address,
+        uint256 tokenId
+    ) internal virtual override {
+        if (from != address(0)) {
+            uint256 maturityTs = mintInfo[tokenId].getMaturityTs();
+            uint256 delta = maturityTs > block.timestamp ? maturityTs - block.timestamp : block.timestamp - maturityTs;
+            require(delta > BLACKOUT_TERM, 'XENFT: transfer prohibited in blackout period');
+        }
     }
 
     /**

@@ -188,9 +188,9 @@ library Metadata {
     function _attr2(
         uint256 amp,
         uint256 eaa,
-        uint256 maturityTs,
-        bool redeemed
+        uint256 maturityTs
     ) private pure returns (bytes memory) {
+        (uint year, string memory month) = DateTime.yearAndMonth(maturityTs);
         return
             abi.encodePacked(
                 '{"trait_type":"AMP","value":"',
@@ -199,30 +199,30 @@ library Metadata {
                 '{"trait_type":"EAA (%)","value":"',
                 (eaa / 10).toString(),
                 '"},'
-                '{"trait_type":"Maturity","display_type":"date","value":"',
-                maturityTs.toString(),
+                '{"trait_type":"Maturity Year","value":"',
+                year.toString(),
                 '"},'
-                '{"trait_type":"Redeemed","value":"',
-                redeemed ? "yes" : "no",
+                '{"trait_type":"Maturity Month","value":"',
+                month,
                 '"},'
             );
     }
 
     function _attr3(
-        bool limited,
-        bool rare,
+        uint256 maturityTs,
+        uint256 term,
         uint256 burned
     ) private pure returns (bytes memory) {
         return
             abi.encodePacked(
-                '{"trait_type":"limited","value":"',
-                limited ? "yes" : "no",
+                '{"trait_type":"Maturity DateTime","value":"',
+                maturityTs.asString(),
                 '"},'
-                '{"trait_type":"rare","value":"',
-                rare ? "yes" : "no",
+                '{"trait_type":"Term","value":"',
+                term.toString(),
                 '"},'
                 '{"trait_type":"XEN Burned","value":"',
-                burned.toString(),
+                (burned / 10**18).toString(),
                 '"}'
             );
     }
@@ -236,22 +236,21 @@ library Metadata {
         uint256 mintInfo
     ) external pure returns (bytes memory) {
         (
-            ,
+            uint256 term,
             uint256 maturityTs,
             uint256 rank,
             uint256 amp,
             uint256 eaa,
             uint256 series,
-            bool rare,
-            bool limited,
-            bool redeemed
+            ,
+            ,
         ) = MintInfo.decodeMintInfo(mintInfo);
         return
             abi.encodePacked(
                 "[",
                 _attr1(count, rank, series),
-                _attr2(amp, eaa, maturityTs, redeemed),
-                _attr3(limited, rare, burned),
+                _attr2(amp, eaa, maturityTs),
+                _attr3(maturityTs, term, burned),
                 "]"
             );
     }
