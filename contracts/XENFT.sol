@@ -122,10 +122,11 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     }
 
     /**
-        @dev support for IBurnRedeemable interface
+        @dev support for IBurnRedeemable interface in addition to parent's ERC721 / ERC165
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IBurnRedeemable).interfaceId;
+        return interfaceId == type(IBurnRedeemable).interfaceI ||
+        super.supportsInterface(interfaceId);
     }
 
     /**
