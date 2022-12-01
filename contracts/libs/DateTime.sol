@@ -36,7 +36,7 @@ library DateTime {
     }
 
     /**
-     *   @dev returns string of format 'Jan 01, 2022 18:00 UTC'
+     *   @dev returns string of format 'Jan 01, 2022 18:00 UTC' for a given timestamp
      */
     function asString(uint256 ts) external pure returns (string memory) {
         (uint256 year, uint256 month, uint256 day, uint256 hour, uint256 minute, ) = BokkyPooBahsDateTimeLibrary
@@ -56,5 +56,13 @@ library DateTime {
                     " UTC"
                 )
             );
+    }
+
+    /**
+     *   @dev returns (year, month as string) components of a date by timestamp
+     */
+    function yearAndMonth(uint256 ts) external pure returns (uint256, string memory) {
+        (uint256 year, uint256 month, , , , ) = BokkyPooBahsDateTimeLibrary.timestampToDateTime(ts);
+        return (year, monthAsString(month));
     }
 }

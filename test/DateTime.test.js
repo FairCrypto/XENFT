@@ -5,9 +5,9 @@ require('dotenv').config()
 
 const DateTime = artifacts.require("DateTime")
 
-// const { bn2hexStr, toBigInt, maxBigInt, etherToWei } = require('../src/utils.js')
+const extraPrint = process.env.EXTRA_PRINT;
 
-contract("XENFT (DateTime library)", async accounts => {
+contract("DateTime library", async accounts => {
 
     let dateTime;
 
@@ -20,9 +20,10 @@ contract("XENFT (DateTime library)", async accounts => {
     })
 
     it("DateTime.asString should convert unix timestamp to Date-Time string", async () => {
-        const dateTimeStr = await dateTime.asString(Math.floor((Date.now()  / 1_000)) + 20*60);
-        assert.ok(new Date(dateTimeStr))
-        console.log(dateTimeStr, new Date(dateTimeStr))
+        const dateTimeStr = await dateTime.asString(Math.floor((Date.now()  / 1_000)) + 20 * 60);
+        assert.ok(dateTimeStr.endsWith('UTC'));
+        assert.ok(new Date(dateTimeStr));
+        extraPrint && console.log('     ', dateTimeStr, new Date(dateTimeStr))
     })
 
 })

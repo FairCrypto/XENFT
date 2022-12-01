@@ -33,9 +33,9 @@ module.exports = {
       network_id: 5,
       confirmations: 2,
       timeoutBlocks: 100,
-      gas: 19_000_000,
-      maxPriorityFeePerGas: 3_500_000_000,
-      maxFeePerGas: 70_000_000_000,
+      gas: 12_000_000,
+      maxPriorityFeePerGas: 2_000_000_000,
+      maxFeePerGas: 30_000_000_000,
       skipDryRun: true,
       // from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
       networkCheckTimeout: 999999
@@ -83,6 +83,7 @@ module.exports = {
       provider: () => new HDWalletProvider({
         privateKeys: privKeysRinkeby,
         providerOrUrl: `https://rpc-mumbai.maticvigil.com/v1/53a113316e0a9e20bcf02b13dd504ac33aeea3ba`,
+        //providerOrUrl: `https://rpc.ankr.com/polygon_mumbai`,
         pollingInterval: 56000
       }),
       network_id: 80001,

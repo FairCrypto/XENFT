@@ -1,6 +1,6 @@
 {
   "name": "@faircrypto/xenft",
-  "version": "0.1.3",
+  "version": "0.2.1",
   "description": "XENFT",
   "main": "truffle-config.js",
   "directories": {
@@ -23,8 +23,10 @@
     "@openzeppelin/contracts": "^4.7.3"
   },
   "devDependencies": {
+    "@ethersproject/providers": "^5.7.2",
     "@truffle/hdwallet-provider": "^2.0.15",
     "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
     "ganache-time-traveler": "^1.0.16",
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3",

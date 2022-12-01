@@ -1,38 +1,48 @@
 const XENFT = artifacts.require("XENFT");
 const XENCrypto = artifacts.require("XENCrypto");
 const DateTime = artifacts.require("DateTime");
-const Quotes = artifacts.require("Quotes");
+const StringData = artifacts.require("StringData");
+const MintInfo = artifacts.require("MintInfo");
+const Metadata = artifacts.require("Metadata");
+const TestBulkMinter = artifacts.require("TestBulkMinter");
 
 require("dotenv").config();
 
-const xenContractAddress = process.env.XEN_CONTRACT_ADDRESS;
-const dateTimeAddress = process.env.DATETIME_CONTRACT_ADDRESS;
-const quotesAddress = process.env.QUOTES_CONTRACT_ADDRESS;
-
 module.exports = async function (deployer, network) {
-  if (dateTimeAddress && network !== 'test') {
-    console.log('using existing DateTime at', dateTimeAddress)
-    const dt = await DateTime.at(dateTimeAddress);
-    await deployer.link(dt, XENFT);
-  } else {
+
+    const xenContractAddress = process.env[`${network.toUpperCase()}_CONTRACT_ADDRESS`];
+
     await deployer.deploy(DateTime);
-    await deployer.link(DateTime, XENFT);
-  }
+    await deployer.link(DateTime, Metadata);
 
-  if (quotesAddress && network !== 'test') {
-    console.log('using existing Quotes at', quotesAddress)
-    const qs = await Quotes.at(dateTimeAddress);
-    await deployer.link(qs, XENFT);
-  } else {
-    await deployer.deploy(Quotes);
-    await deployer.link(Quotes, XENFT);
-  }
+    await deployer.deploy(StringData);
+    await deployer.link(StringData, Metadata);
 
-  if (xenContractAddress && network !== 'test') {
-    await deployer.deploy(XENFT, xenContractAddress);
-  } else {
-    const xenContract = await XENCrypto.deployed();
-    // console.log(network, xenContract?.address)
-    await deployer.deploy(XENFT, xenContract.address);
-  }
+    await deployer.deploy(MintInfo);
+    await deployer.link(MintInfo, Metadata);
+    await deployer.link(MintInfo, XENFT);
+
+    await deployer.deploy(Metadata);
+    await deployer.link(Metadata, XENFT);
+
+    const { burnRates, rareLimits } = (network === 'test' || network === 'ganache')
+        ? require('../config/specialNFTs.test.js')
+        : require('../config/specialNFTs.js');
+
+    const ether = 10n ** 18n;
+    const burnRatesParam = burnRates.map(r => r * ether);
+
+    if (xenContractAddress) {
+        await deployer.deploy(XENFT, xenContractAddress, burnRatesParam, rareLimits);
+    } else {
+        const xenContract = await XENCrypto.deployed();
+        // console.log(network, xenContract?.address)
+        await deployer.deploy(XENFT, xenContract.address, burnRatesParam, rareLimits);
+    }
+    if (network === 'test') {
+        const xenftAddress = XENFT.address;
+        const xenCryptoAddress = XENCrypto.address;
+        // console.log(xenftAddress);
+        await deployer.deploy(TestBulkMinter, xenCryptoAddress, xenftAddress);
+    }
 };
