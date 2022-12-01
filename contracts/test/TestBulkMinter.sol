@@ -2,10 +2,9 @@
 pragma solidity ^0.8.10;
 
 import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
-import '../XENFT.sol';
+import "../XENFT.sol";
 
 contract TestBulkMinter is IERC721Receiver {
-
     XENCrypto private _xenCrypto;
     XENFT private _xenTorrent;
 
@@ -30,8 +29,12 @@ contract TestBulkMinter is IERC721Receiver {
         _xenCrypto.approve(address(_xenTorrent), amount);
     }
 
-    function onERC721Received(address, address, uint256, bytes calldata) external pure returns (bytes4) {
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure returns (bytes4) {
         return IERC721Receiver.onERC721Received.selector;
     }
-
 }

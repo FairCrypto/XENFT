@@ -190,7 +190,7 @@ library Metadata {
         uint256 eaa,
         uint256 maturityTs
     ) private pure returns (bytes memory) {
-        (uint year, string memory month) = DateTime.yearAndMonth(maturityTs);
+        (uint256 year, string memory month) = DateTime.yearAndMonth(maturityTs);
         return
             abi.encodePacked(
                 '{"trait_type":"AMP","value":"',
@@ -235,16 +235,8 @@ library Metadata {
         uint256 burned,
         uint256 mintInfo
     ) external pure returns (bytes memory) {
-        (
-            uint256 term,
-            uint256 maturityTs,
-            uint256 rank,
-            uint256 amp,
-            uint256 eaa,
-            uint256 series,
-            ,
-            ,
-        ) = MintInfo.decodeMintInfo(mintInfo);
+        (uint256 term, uint256 maturityTs, uint256 rank, uint256 amp, uint256 eaa, uint256 series, , , ) = MintInfo
+            .decodeMintInfo(mintInfo);
         return
             abi.encodePacked(
                 "[",
