@@ -29,7 +29,7 @@ import "./libs/Array.sol";
     - term, maturityTs, cRank start / end, AMP and EAA
     - redeemed: is the XENFT redeemed (used)
  */
-contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ERC721("XEN Torrent", "XENT") {
+contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ERC721("XEN Torrent", "mXENT") {
     //using DateTime for uint256;
     using Strings for uint256;
     using MintInfo for uint256;
@@ -43,10 +43,9 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
     uint256 public constant RARE_SERIES_VMU_THRESHOLD = 99;
     uint256 public constant LIMITED_SERIES_TIME_THRESHOLD = 3_600 * 24 * 365;
 
-    // XENFT series
     uint256 public constant POWER_GROUP_SIZE = 7_500;
 
-    // Metadata image params
+    string public constant AUTHORS = "@MrJackLevin @lbelyaev faircrypto.org";
 
     // original contract marking to distinguish from proxy copies
     address private immutable _original;
@@ -125,7 +124,7 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         @dev support for IBurnRedeemable interface in addition to parent's ERC721 / ERC165
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IBurnRedeemable).interfaceI ||
+        return interfaceId == type(IBurnRedeemable).interfaceId ||
         super.supportsInterface(interfaceId);
     }
 

@@ -83,6 +83,7 @@ module.exports = {
       provider: () => new HDWalletProvider({
         privateKeys: privKeysRinkeby,
         providerOrUrl: `https://rpc-mumbai.maticvigil.com/v1/53a113316e0a9e20bcf02b13dd504ac33aeea3ba`,
+        //providerOrUrl: `https://rpc.ankr.com/polygon_mumbai`,
         pollingInterval: 56000
       }),
       network_id: 80001,
