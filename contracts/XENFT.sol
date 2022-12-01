@@ -29,7 +29,7 @@ import "./libs/Array.sol";
     - term, maturityTs, cRank start / end, AMP and EAA
     - redeemed: is the XENFT redeemed (used)
  */
-contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ERC721("XEN Torrent", "mXENT") {
+contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ERC721("XEN Torrent", "XENT") {
     //using DateTime for uint256;
     using Strings for uint256;
     using MintInfo for uint256;
