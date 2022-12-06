@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
+import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -37,6 +38,7 @@ contract XENFT is
     IXENProxying,
     IBurnableToken,
     IBurnRedeemable,
+    ERC2771Context,
     ERC721("XEN Torrent", "XENT")
 {
     //using DateTime for uint256;
@@ -112,8 +114,9 @@ contract XENFT is
     constructor(
         address xenCrypto_,
         uint256[] memory burnRates_,
-        uint256[] memory tokenLimits_
-    ) {
+        uint256[] memory tokenLimits_,
+        address forwarder_
+    ) ERC2771Context(forwarder_) {
         require(xenCrypto_ != address(0), "bad address");
         require(burnRates_.length == tokenLimits_.length && burnRates_.length > 0, "params mismatch");
         _original = address(this);
@@ -127,6 +130,20 @@ contract XENFT is
             specialSeriesCounters[i] = specialSeriesTokenLimits[i + 1] + 1;
         }
         specialSeriesCounters[specialSeriesBurnRates.length - 1] = 1;
+    }
+
+    /**
+        @dev use ERC2771Context implementation of _msgSender()
+     */
+    function _msgSender() internal view virtual override(Context, ERC2771Context) returns (address) {
+        return ERC2771Context._msgSender();
+    }
+
+    /**
+        @dev use ERC2771Context implementation of _msgData()
+     */
+    function _msgData() internal view virtual override(Context, ERC2771Context) returns (bytes calldata) {
+        return ERC2771Context._msgData();
     }
 
     /**
@@ -147,7 +164,7 @@ contract XENFT is
         @dev public getter for tokens owned by address
      */
     function ownedTokens() external view returns (uint256[] memory) {
-        return _ownedTokens[msg.sender];
+        return _ownedTokens[_msgSender()];
     }
 
     /**
@@ -305,7 +322,7 @@ contract XENFT is
             return tokenIdCounter++;
         }
         if (tier > 1) {
-            require(msg.sender == tx.origin, "XENFT: only EOA allowed for this category");
+            require(_msgSender() == tx.origin, "XENFT: only EOA allowed for this category");
             require(count > RARE_SERIES_VMU_THRESHOLD, "XENFT: under req VMU count");
             require(specialSeriesCounters[tier] < specialSeriesTokenLimits[tier] + 1, "XENFT: series sold out");
             return specialSeriesCounters[tier]++;
@@ -321,9 +338,9 @@ contract XENFT is
         require(term > 0, "XENFT: Illegal term");
         uint256 tokenId = _getTokenId(count, 0);
         _bulkClaimRank(count, term, tokenId, 0);
-        _safeMint(msg.sender, tokenId);
-        _ownedTokens[msg.sender].addItem(tokenId);
-        emit StartTorrent(msg.sender, count, term);
+        _safeMint(_msgSender(), tokenId);
+        _ownedTokens[_msgSender()].addItem(tokenId);
+        emit StartTorrent(_msgSender(), count, term);
         return tokenId;
     }
 
@@ -339,13 +356,13 @@ contract XENFT is
         require(count > 0, "XENFT: Illegal count");
         require(term > 0, "XENFT: Illegal term");
         require(burning > specialSeriesBurnRates[1] - 1, "XENFT: not enough burn amount");
-        uint256 balance = IERC20(xenCrypto).balanceOf(msg.sender);
+        uint256 balance = IERC20(xenCrypto).balanceOf(_msgSender());
         require(balance > burning - 1, "XENFT: not enough XEN balance");
-        uint256 approved = IERC20(xenCrypto).allowance(msg.sender, address(this));
+        uint256 approved = IERC20(xenCrypto).allowance(_msgSender(), address(this));
         require(approved > burning - 1, "XENFT: not enough XEN balance approved for burn");
         _tokenId = _getTokenId(count, burning);
         _bulkClaimRank(count, term, _tokenId, burning);
-        IBurnableToken(xenCrypto).burn(msg.sender, burning);
+        IBurnableToken(xenCrypto).burn(_msgSender(), burning);
         return _tokenId;
     }
 
@@ -366,7 +383,7 @@ contract XENFT is
         @dev public torrent interface. initiates Mint Reward claim and collection and terminates Torrent Operation
      */
     function bulkClaimMintReward(uint256 tokenId, address to) external {
-        require(ownerOf(tokenId) == msg.sender, "XENFT: Incorrect owner");
+        require(ownerOf(tokenId) == _msgSender(), "XENFT: Incorrect owner");
         require(to != address(0), "XENFT: Illegal address");
         require(!mintInfo[tokenId].getRedeemed(), "XENFT: Already redeemed");
         bytes memory bytecode = bytes.concat(
@@ -392,7 +409,7 @@ contract XENFT is
             require(succeeded, "XENFT: Error while powering down");
         }
         _setRedeemed(tokenId);
-        emit EndTorrent(msg.sender, tokenId, to);
+        emit EndTorrent(_msgSender(), tokenId, to);
     }
 
     /**
