@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
+import "operator-filter-registry/src/DefaultOperatorFilterer.sol";
+
 import "./interfaces/IXENTorrent.sol";
 import "./interfaces/IXENProxying.sol";
 import "./libs/MintInfo.sol";
@@ -29,7 +31,14 @@ import "./libs/Array.sol";
     - term, maturityTs, cRank start / end, AMP and EAA
     - redeemed: is the XENFT redeemed (used)
  */
-contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ERC721("XEN Torrent", "XENT") {
+contract XENFT is
+    DefaultOperatorFilterer,
+    IXENTorrent,
+    IXENProxying,
+    IBurnableToken,
+    IBurnRedeemable,
+    ERC721("XEN Torrent", "XENT")
+{
     //using DateTime for uint256;
     using Strings for uint256;
     using MintInfo for uint256;
@@ -428,5 +437,38 @@ contract XENFT is IXENTorrent, IXENProxying, IBurnableToken, IBurnRedeemable, ER
         _ownedTokens[user].removeItem(tokenId);
         _burn(tokenId);
         IBurnRedeemable(_msgSender()).onTokenBurned(user, tokenId);
+    }
+
+    function setApprovalForAll(address operator, bool approved) public override onlyAllowedOperatorApproval(operator) {
+        super.setApprovalForAll(operator, approved);
+    }
+
+    function approve(address operator, uint256 tokenId) public override onlyAllowedOperatorApproval(operator) {
+        super.approve(operator, tokenId);
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override onlyAllowedOperator(from) {
+        super.transferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public override onlyAllowedOperator(from) {
+        super.safeTransferFrom(from, to, tokenId);
+    }
+
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) public override onlyAllowedOperator(from) {
+        super.safeTransferFrom(from, to, tokenId, data);
     }
 }
