@@ -25,7 +25,7 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(Metadata);
     await deployer.link(Metadata, XENFT);
 
-    const { burnRates, rareLimits } = (network === 'test' || network === 'ganache')
+    const { burnRates, rareLimits, forwarder } = (network === 'test' || network === 'ganache')
         ? require('../config/specialNFTs.test.js')
         : require('../config/specialNFTs.js');
 
@@ -33,11 +33,11 @@ module.exports = async function (deployer, network) {
     const burnRatesParam = burnRates.map(r => r * ether);
 
     if (xenContractAddress) {
-        await deployer.deploy(XENFT, xenContractAddress, burnRatesParam, rareLimits);
+        await deployer.deploy(XENFT, xenContractAddress, burnRatesParam, rareLimits, forwarder);
     } else {
         const xenContract = await XENCrypto.deployed();
         // console.log(network, xenContract?.address)
-        await deployer.deploy(XENFT, xenContract.address, burnRatesParam, rareLimits);
+        await deployer.deploy(XENFT, xenContract.address, burnRatesParam, rareLimits, forwarder);
     }
     if (network === 'test') {
         const xenftAddress = XENFT.address;
