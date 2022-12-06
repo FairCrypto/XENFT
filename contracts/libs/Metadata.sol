@@ -223,26 +223,50 @@ library Metadata {
                 '"},'
                 '{"trait_type":"XEN Burned","value":"',
                 (burned / 10**18).toString(),
+                '"},'
+            );
+    }
+
+    function _attr4(
+        bool rare,
+        bool limited
+    ) private pure returns (bytes memory) {
+        string memory class_ = 'Collector';
+        if (limited) class_ = 'Limited';
+        if (rare) class_ = 'Apex';
+        return
+            abi.encodePacked(
+                '{"trait_type":"Class","value":"',
+                class_,
                 '"}'
             );
     }
 
     /**
-@dev private helper to construct attributes portion of NFT metadata
+        @dev private helper to construct attributes portion of NFT metadata
      */
     function attributes(
         uint256 count,
         uint256 burned,
         uint256 mintInfo
     ) external pure returns (bytes memory) {
-        (uint256 term, uint256 maturityTs, uint256 rank, uint256 amp, uint256 eaa, uint256 series, , , ) = MintInfo
-            .decodeMintInfo(mintInfo);
+        (
+        uint256 term,
+        uint256 maturityTs,
+        uint256 rank,
+        uint256 amp,
+        uint256 eaa,
+        uint256 series,
+        bool rare,
+        bool limited,
+        ) = MintInfo.decodeMintInfo(mintInfo);
         return
             abi.encodePacked(
                 "[",
                 _attr1(count, rank, series),
                 _attr2(amp, eaa, maturityTs),
                 _attr3(maturityTs, term, burned),
+                _attr4(rare, limited),
                 "]"
             );
     }

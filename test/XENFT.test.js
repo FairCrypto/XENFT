@@ -17,6 +17,14 @@ const extraPrint = process.env.EXTRA_PRINT;
 
 const ether = 10n ** 18n;
 
+const assertAttribute = (attributes = []) => (name, value) => {
+    const attr = attributes.find(a => a.trait_type === name);
+    assert.ok(attr);
+    if (value) {
+        assert.ok(attr.value === value);
+    }
+}
+
 contract("XENFT --- Standard Edition", async accounts => {
 
     let token;
@@ -183,6 +191,7 @@ contract("XENFT --- Standard Edition", async accounts => {
         assert.ok('image' in metadata);
         assert.ok('attributes' in metadata);
         assert.ok(Array.isArray(metadata.attributes));
+        assertAttribute(metadata.attributes)('Class', 'Collector');
         assert.ok(metadata.image.startsWith('data:image/svg+xml;base64,'));
         const imageBase64 = metadata.image.replace('data:image/svg+xml;base64,', '');
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();
@@ -271,6 +280,7 @@ contract("XENFT --- Standard Edition", async accounts => {
         assert.ok('image' in metadata);
         assert.ok('attributes' in metadata);
         assert.ok(Array.isArray(metadata.attributes));
+        assertAttribute(metadata.attributes)('Class', 'Collector');
         assert.ok(metadata.image.startsWith('data:image/svg+xml;base64,'));
         const imageBase64 = metadata.image.replace('data:image/svg+xml;base64,', '');
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();

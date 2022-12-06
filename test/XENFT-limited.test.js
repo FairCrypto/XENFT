@@ -144,6 +144,7 @@ contract("XENFT --- Limited Edition", async accounts => {
         assert.ok('image' in metadata);
         assert.ok('attributes' in metadata);
         assert.ok(Array.isArray(metadata.attributes));
+        assertAttribute(metadata.attributes)('Class', 'Apex');
         assertAttribute(metadata.attributes)('Series', 'Xunicorn'.padEnd(10, ' '));
         assertAttribute(metadata.attributes)('VMUs', countLimited.toString());
         assertAttribute(metadata.attributes)('Term', term.toString());
@@ -266,6 +267,7 @@ contract("XENFT --- Limited Edition", async accounts => {
         assert.ok('image' in metadata);
         assert.ok('attributes' in metadata);
         assert.ok(Array.isArray(metadata.attributes));
+        assertAttribute(metadata.attributes)('Class', 'Limited');
         assert.ok(metadata.image.startsWith('data:image/svg+xml;base64,'));
         const imageBase64 = metadata.image.replace('data:image/svg+xml;base64,', '');
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();
