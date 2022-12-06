@@ -40,3 +40,7 @@ hook runs `lint-staged` to run code lint checking and code formatting before com
 ```shell
 npm run husky:install
 ```
+
+### Forwarder
+
+Reference forwarder implementation from OpenGSN: https://github.com/opengsn/gsn/blob/master/packages/contracts/src/forwarder/Forwarder.sol
