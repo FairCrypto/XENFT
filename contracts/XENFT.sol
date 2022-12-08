@@ -375,7 +375,7 @@ contract XENFT is
         _safeMint(user, _tokenId);
         _ownedTokens[user].addItem(_tokenId);
         xenBurned[_tokenId] = burned;
-        emit StartTorrent(msg.sender, vmuCount[_tokenId], mintInfo[_tokenId].getTerm());
+        emit StartTorrent(user, vmuCount[_tokenId], mintInfo[_tokenId].getTerm());
         _tokenId = 0;
     }
 
