@@ -17,6 +17,7 @@ module.exports = {
         1_000,  // starts from 3
         2,      // starts from 1
     ],
+    forwarder: '0x0000000000000000000000000000000000000000',
     Series: {
         COLLECTOR:  0,
         LIMITED:    1,
