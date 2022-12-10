@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
 import "operator-filter-registry/src/DefaultOperatorFilterer.sol";
-
+import "./libs/ERC2771Context.sol";
 import "./interfaces/IXENTorrent.sol";
 import "./interfaces/IXENProxying.sol";
 import "./libs/MintInfo.sol";
@@ -33,12 +32,12 @@ import "./libs/Array.sol";
     - redeemed: is the XENFT redeemed (used)
  */
 contract XENFT is
-    DefaultOperatorFilterer,
+    DefaultOperatorFilterer, // required to support OpenSea royalties
     IXENTorrent,
     IXENProxying,
     IBurnableToken,
     IBurnRedeemable,
-    ERC2771Context,
+    ERC2771Context, // required to support meta transactions
     ERC721("XEN Torrent", "XENT")
 {
     //using DateTime for uint256;
@@ -487,5 +486,11 @@ contract XENFT is
         bytes memory data
     ) public override onlyAllowedOperator(from) {
         super.safeTransferFrom(from, to, tokenId, data);
+    }
+
+    function addForwarder(address trustedForwarder) public {
+        require(msg.sender == _deployer, "XENFT: not an deployer");
+        require(_trustedForwarder == address(0), "XENFT: Forwarder is already set");
+        _trustedForwarder = trustedForwarder;
     }
 }
