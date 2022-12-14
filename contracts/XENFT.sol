@@ -2,11 +2,13 @@
 pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
 import "operator-filter-registry/src/DefaultOperatorFilterer.sol";
 import "./libs/ERC2771Context.sol";
+import "./interfaces/IERC2771.sol";
 import "./interfaces/IXENTorrent.sol";
 import "./interfaces/IXENProxying.sol";
 import "./libs/MintInfo.sol";
@@ -38,6 +40,7 @@ contract XENFT is
     IBurnableToken,
     IBurnRedeemable,
     ERC2771Context, // required to support meta transactions
+    IERC2981, // required to support NFT royalties
     ERC721("XEN Torrent", "XENT")
 {
     //using DateTime for uint256;
@@ -56,6 +59,9 @@ contract XENFT is
     uint256 public constant POWER_GROUP_SIZE = 7_500;
 
     string public constant AUTHORS = "@MrJackLevin @lbelyaev faircrypto.org";
+
+    uint256 public constant ROYALTY_PCT = 5;
+    uint256 public constant ROYALTY_MIN_AMOUNT = 0.01 ether;
 
     // original contract marking to distinguish from proxy copies
     address private immutable _original;
@@ -148,8 +154,12 @@ contract XENFT is
     /**
         @dev support for IBurnRedeemable interface in addition to parent's ERC721 / ERC165
      */
-    function supportsInterface(bytes4 interfaceId) public view virtual override returns (bool) {
-        return interfaceId == type(IBurnRedeemable).interfaceId || super.supportsInterface(interfaceId);
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC721) returns (bool) {
+        return
+            interfaceId == type(IBurnRedeemable).interfaceId ||
+            interfaceId == type(IERC2981).interfaceId ||
+            interfaceId == type(IERC2771).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     /**
@@ -488,9 +498,14 @@ contract XENFT is
         super.safeTransferFrom(from, to, tokenId, data);
     }
 
-    function addForwarder(address trustedForwarder) public {
+    function addForwarder(address trustedForwarder) external {
         require(msg.sender == _deployer, "XENFT: not an deployer");
         require(_trustedForwarder == address(0), "XENFT: Forwarder is already set");
         _trustedForwarder = trustedForwarder;
+    }
+
+    function royaltyInfo(uint256, uint256 salePrice) external view returns (address receiver, uint256 royaltyAmount) {
+        uint256 amount = (salePrice * ROYALTY_PCT) / 100;
+        return (_deployer, amount > ROYALTY_MIN_AMOUNT ? amount : ROYALTY_MIN_AMOUNT);
     }
 }
