@@ -152,10 +152,10 @@ contract XENTorrent is
      */
     function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC721) returns (bool) {
         return
-        interfaceId == type(IBurnRedeemable).interfaceId ||
-        interfaceId == type(IERC2981).interfaceId ||
-        interfaceId == type(IERC2771).interfaceId ||
-        super.supportsInterface(interfaceId);
+            interfaceId == type(IBurnRedeemable).interfaceId ||
+            interfaceId == type(IERC2981).interfaceId ||
+            interfaceId == type(IERC2771).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 
     // ERC2771 IMPLEMENTATION
