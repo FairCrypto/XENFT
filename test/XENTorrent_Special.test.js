@@ -5,7 +5,7 @@ const timeMachine = require('ganache-time-traveler');
 const {toBigInt} = require("../src/utils");
 
 const XENCrypto = artifacts.require("XENCrypto");
-const XENFT = artifacts.require("XENFT");
+const XENTorrent = artifacts.require("XENTorrent");
 const TestBulkMinter = artifacts.require("TestBulkMinter");
 
 const { burnRates, rareLimits, Series } = require('../config/specialNFTs.test.js');
@@ -22,7 +22,7 @@ const assertAttribute = (attributes = []) => (name, value) => {
     }
 }
 
-contract("XENFT --- Limited Edition", async accounts => {
+contract("XENFTs --- Apex and Limited classes", async accounts => {
 
     let token;
     let xeNFT;
@@ -42,7 +42,7 @@ contract("XENFT --- Limited Edition", async accounts => {
     before(async () => {
         try {
             token = await XENCrypto.deployed();
-            xeNFT = await XENFT.deployed();
+            xeNFT = await XENTorrent.deployed();
             bulkMinter = await TestBulkMinter.deployed();
             xenCryptoAddress = token.address;
         } catch (e) {

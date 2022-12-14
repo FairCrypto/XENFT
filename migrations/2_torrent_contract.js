@@ -1,4 +1,4 @@
-const XENFT = artifacts.require("XENFT");
+const XENTorrent = artifacts.require("XENTorrent");
 const XENCrypto = artifacts.require("XENCrypto");
 const DateTime = artifacts.require("DateTime");
 const StringData = artifacts.require("StringData");
@@ -20,10 +20,10 @@ module.exports = async function (deployer, network) {
 
     await deployer.deploy(MintInfo);
     await deployer.link(MintInfo, Metadata);
-    await deployer.link(MintInfo, XENFT);
+    await deployer.link(MintInfo, XENTorrent);
 
     await deployer.deploy(Metadata);
-    await deployer.link(Metadata, XENFT);
+    await deployer.link(Metadata, XENTorrent);
 
     const { burnRates, rareLimits, forwarder } = (network === 'test' || network === 'ganache')
         ? require('../config/specialNFTs.test.js')
@@ -33,14 +33,14 @@ module.exports = async function (deployer, network) {
     const burnRatesParam = burnRates.map(r => r * ether);
 
     if (xenContractAddress) {
-        await deployer.deploy(XENFT, xenContractAddress, burnRatesParam, rareLimits, forwarder);
+        await deployer.deploy(XENTorrent, xenContractAddress, burnRatesParam, rareLimits, forwarder);
     } else {
         const xenContract = await XENCrypto.deployed();
         // console.log(network, xenContract?.address)
-        await deployer.deploy(XENFT, xenContract.address, burnRatesParam, rareLimits, forwarder);
+        await deployer.deploy(XENTorrent, xenContract.address, burnRatesParam, rareLimits, forwarder);
     }
     if (network === 'test') {
-        const xenftAddress = XENFT.address;
+        const xenftAddress = XENTorrent.address;
         const xenCryptoAddress = XENCrypto.address;
         // console.log(xenftAddress);
         await deployer.deploy(TestBulkMinter, xenCryptoAddress, xenftAddress);

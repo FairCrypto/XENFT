@@ -4,7 +4,7 @@ const assert = require('assert')
 const {id} = require("ethers/lib/utils");
 require('dotenv').config()
 
-const XENFT = artifacts.require("XENFT");
+const XENTorrent = artifacts.require("XENTorrent");
 
 const INTERFACES = {
     ERC165: [
@@ -55,7 +55,7 @@ contract("Interfaces", async () => {
 
     before(async () => {
         try {
-            xeNFT = await XENFT.deployed();
+            xeNFT = await XENTorrent.deployed();
         } catch (e) {
             console.error(e)
         }

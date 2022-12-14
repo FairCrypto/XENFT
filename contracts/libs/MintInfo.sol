@@ -9,7 +9,7 @@ pragma solidity ^0.8.10;
 //      | amp (uint16)
 //      | eaa (uint16)
 //      | series (uint8):
-//          [7] isRare
+//          [7] isApex
 //          [6] isLimited
 //          [0-5] powerSeriesIdx
 //      | redeemed (uint8)
@@ -57,7 +57,7 @@ library MintInfo {
             uint256 amp,
             uint256 eaa,
             uint256 series,
-            bool rare,
+            bool apex,
             bool limited,
             bool redeemed
         )
@@ -68,7 +68,7 @@ library MintInfo {
         amp = uint16(info >> 32);
         eaa = uint16(info >> 16);
         series = uint8(info >> 8) & 0x3F;
-        rare = (uint8(info >> 8) & 0x80) > 0;
+        apex = (uint8(info >> 8) & 0x80) > 0;
         limited = (uint8(info >> 8) & 0x40) > 0;
         redeemed = uint8(info) == 1;
     }
@@ -116,11 +116,11 @@ library MintInfo {
         pure
         returns (
             uint256 series,
-            bool rare,
+            bool apex,
             bool limited
         )
     {
-        (, , , , , series, rare, limited, ) = decodeMintInfo(info);
+        (, , , , , series, apex, limited, ) = decodeMintInfo(info);
     }
 
     /**

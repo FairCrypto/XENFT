@@ -20,7 +20,7 @@ library Metadata {
     uint256 public constant MAX_POWER = 52_500;
 
     uint256 public constant COLORS_FULL_SCALE = 300;
-    uint256 public constant LIMITED_LUMINOSITY = 45;
+    uint256 public constant SPECIAL_LUMINOSITY = 45;
     uint256 public constant BASE_SATURATION = 75;
     uint256 public constant BASE_LUMINOSITY = 38;
     uint256 public constant GROUP_SATURATION = 100;
@@ -37,7 +37,7 @@ library Metadata {
         return [uint256(360), 1, 30, 60, 120, 180, 240, 300];
     }
 
-    function _huesRare() private pure returns (uint256[3] memory) {
+    function _huesApex() private pure returns (uint256[3] memory) {
         return [uint256(169), 210, 305];
     }
 
@@ -70,16 +70,16 @@ library Metadata {
     }
 
     /**
-        @dev private helper to generate SVG gradients for limited XENFT series
+        @dev private helper to generate SVG gradients for special XENFT series
      */
-    function _limitedSeriesGradients(bool rare) private pure returns (SVG.Gradient[] memory gradients) {
-        uint256[3] memory specialColors = rare ? _huesRare() : _huesLimited();
+    function _specialClassGradients(bool rare) private pure returns (SVG.Gradient[] memory gradients) {
+        uint256[3] memory specialColors = rare ? _huesApex() : _huesLimited();
         SVG.Color[] memory colors = new SVG.Color[](3);
         for (uint256 i = 0; i < colors.length; i++) {
             colors[i] = SVG.Color({
                 h: specialColors[i],
                 s: BASE_SATURATION,
-                l: LIMITED_LUMINOSITY,
+                l: SPECIAL_LUMINOSITY,
                 a: DEFAULT_OPACITY,
                 off: _stopOffsets()[i]
             });
@@ -161,7 +161,7 @@ library Metadata {
         });
         uint256 quoteIdx = uint256(keccak256(abi.encode(info))) % StringData.QUOTES_COUNT;
         if (rare || limited) {
-            return SVG.image(params, _limitedSeriesGradients(rare), quoteIdx, rare, limited);
+            return SVG.image(params, _specialClassGradients(rare), quoteIdx, rare, limited);
         }
         return SVG.image(params, _regularSeriesGradients(count, info.getTerm()), quoteIdx, rare, limited);
     }
@@ -227,10 +227,10 @@ library Metadata {
             );
     }
 
-    function _attr4(bool rare, bool limited) private pure returns (bytes memory) {
+    function _attr4(bool apex, bool limited) private pure returns (bytes memory) {
         string memory class_ = "Collector";
         if (limited) class_ = "Limited";
-        if (rare) class_ = "Apex";
+        if (apex) class_ = "Apex";
         return abi.encodePacked('{"trait_type":"Class","value":"', class_, '"}');
     }
 
@@ -249,7 +249,7 @@ library Metadata {
             uint256 amp,
             uint256 eaa,
             uint256 series,
-            bool rare,
+            bool apex,
             bool limited,
 
         ) = MintInfo.decodeMintInfo(mintInfo);
@@ -259,12 +259,11 @@ library Metadata {
                 _attr1(count, rank, series),
                 _attr2(amp, eaa, maturityTs),
                 _attr3(maturityTs, term, burned),
-                _attr4(rare, limited),
+                _attr4(apex, limited),
                 "]"
             );
     }
 
-    // TODO: delete after testing
     function formattedString(uint256 n) public pure returns (string memory) {
         return FormattedStrings.toFormattedString(n);
     }
