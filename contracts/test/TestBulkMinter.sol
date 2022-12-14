@@ -6,11 +6,11 @@ import "../XENFT.sol";
 
 contract TestBulkMinter is IERC721Receiver {
     XENCrypto private _xenCrypto;
-    XENFT private _xenTorrent;
+    XENTorrent private _xenTorrent;
 
     constructor(address xenCrypto_, address xenTorrent_) {
         _xenCrypto = XENCrypto(xenCrypto_);
-        _xenTorrent = XENFT(xenTorrent_);
+        _xenTorrent = XENTorrent(xenTorrent_);
     }
 
     function testBulkMintCollector() external {
