@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.9.0;
+pragma solidity ^0.8.10;
 
 // ----------------------------------------------------------------------------
 // BokkyPooBah's DateTime Library v1.01
@@ -32,13 +32,8 @@ library BokkyPooBahsDateTimeLibrary {
     uint256 constant _SECONDS_PER_MINUTE = 60;
     int256 constant _OFFSET19700101 = 2440588;
 
-    uint256 constant _DOW_MON = 1;
-    uint256 constant _DOW_TUE = 2;
-    uint256 constant _DOW_WED = 3;
-    uint256 constant _DOW_THU = 4;
     uint256 constant _DOW_FRI = 5;
     uint256 constant _DOW_SAT = 6;
-    uint256 constant _DOW_SUN = 7;
 
     // ------------------------------------------------------------------------
     // Calculate the number of days from 1970/01/01 to year/month/day using

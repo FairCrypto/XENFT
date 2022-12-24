@@ -55,22 +55,23 @@ contract XENTorrent is
     // XENFT common business logic
     uint256 public constant BLACKOUT_TERM = 7 * 24 * 3600; /* 7 days in sec */
 
-    // XENFT limited series params
-    uint256 public constant COLLECTOR_CLASS_COUNTER = 10_001;
-    uint256 public constant SPECIAL_CLASSES_VMU_THRESHOLD = 99;
-    uint256 public constant LIMITED_CLASS_TIME_THRESHOLD = 3_600 * 24 * 365;
+    // XENFT categories' params
+    uint256 public constant COMMON_CATEGORY_COUNTER = 10_001;
+    uint256 public constant SPECIAL_CATEGORIES_VMU_THRESHOLD = 99;
+    uint256 public constant LIMITED_CATEGORY_TIME_THRESHOLD = 3_600 * 24 * 365;
 
     uint256 public constant POWER_GROUP_SIZE = 7_500;
 
     string public constant AUTHORS = "@MrJackLevin @lbelyaev faircrypto.org";
 
-    uint256 public constant ROYALTY_PCT = 5;
-    uint256 public constant ROYALTY_MIN_AMOUNT = 0.01 ether;
+    uint256 public constant ROYALTY_BP = 250;
 
     // PUBLIC MUTABLE STATE
 
     // increasing counters for NFT tokenIds, also used as salt for proxies' spinning
-    uint256 public tokenIdCounter = COLLECTOR_CLASS_COUNTER;
+    uint256 public tokenIdCounter = COMMON_CATEGORY_COUNTER;
+
+    // Indexing of params by categories and classes:
     // 0: Collector
     // 1: Limited
     // 2: Rare
@@ -78,11 +79,12 @@ contract XENTorrent is
     // 4: Legendary
     // 5: Exotic
     // 6: Xunicorn
-    uint256[] public specialSeriesBurnRates;
+    // [0, B1, B2, B3, B4, B5, B6]
+    uint256[] public specialClassesBurnRates;
     // [0, 0, R1, R2, R3, R4, R5]
-    uint256[] public specialSeriesTokenLimits;
+    uint256[] public specialClassesTokenLimits;
     // [0, 0, 0 + 1, R1+1, R2+1, R3+1, R4+1]
-    uint256[] public specialSeriesCounters;
+    uint256[] public specialClassesCounters;
 
     // mapping: NFT tokenId => count of Virtual Mining Units
     mapping(uint256 => uint256) public vmuCount;
@@ -95,10 +97,10 @@ contract XENTorrent is
     //      | rank (uint128)
     //      | amp (uint16)
     //      | eaa (uint16)
-    //      | series (uint8):
+    //      | class (uint8):
     //          [7] isApex
     //          [6] isLimited
-    //          [0-5] powerSeriesIdx
+    //          [0-5] powerGroupIdx
     //      | redeemed (uint8)
     mapping(uint256 => uint256) public mintInfo;
 
@@ -108,15 +110,27 @@ contract XENTorrent is
     XENCrypto public immutable xenCrypto;
     // genesisTs for the contract
     uint256 public immutable genesisTs;
+    // start of operations block number
+    uint256 public immutable startBlockNumber;
 
     // PRIVATE STATE
 
     // original contract marking to distinguish from proxy copies
     address private immutable _original;
-    // original deployer address to be used for royalties' tracking
+    // original deployer address to be used for setting trusted forwarder
     address private immutable _deployer;
-    // reentrancy guard
-    uint256 private _tokenId = 0;
+    // address to be used for royalties' tracking
+    address private immutable _royaltyReceiver;
+
+    // reentrancy guard constants and state
+    // using non-zero constants to save gas avoiding repeated initialization
+    uint256 private constant _NOT_USED = 2**256 - 1; // 0xFF..FF
+    uint256 private constant _USED = _NOT_USED - 1; // 0xFF..FE
+    // used as both
+    // - reentrancy guard (_NOT_USED > _USED > _NOT_USED)
+    // - for keeping state while awaiting for OnTokenBurned callback (_NOT_USED > tokenId > _NOT_USED)
+    uint256 private _tokenId;
+
     // mapping Address => tokenId[]
     mapping(address => uint256[]) private _ownedTokens;
 
@@ -127,21 +141,44 @@ contract XENTorrent is
         address xenCrypto_,
         uint256[] memory burnRates_,
         uint256[] memory tokenLimits_,
-        address forwarder_
+        uint256 startBlockNumber_,
+        address forwarder_,
+        address royaltyReceiver_
     ) ERC2771Context(forwarder_) {
         require(xenCrypto_ != address(0), "bad address");
         require(burnRates_.length == tokenLimits_.length && burnRates_.length > 0, "params mismatch");
+        _tokenId = _NOT_USED;
         _original = address(this);
         _deployer = msg.sender;
+        _royaltyReceiver = royaltyReceiver_ == address(0) ? msg.sender : royaltyReceiver_;
+        startBlockNumber = startBlockNumber_;
         genesisTs = block.timestamp;
         xenCrypto = XENCrypto(xenCrypto_);
-        specialSeriesBurnRates = burnRates_;
-        specialSeriesTokenLimits = tokenLimits_;
-        specialSeriesCounters = new uint256[](tokenLimits_.length);
-        for (uint256 i = 2; i < specialSeriesBurnRates.length - 1; i++) {
-            specialSeriesCounters[i] = specialSeriesTokenLimits[i + 1] + 1;
+        specialClassesBurnRates = burnRates_;
+        specialClassesTokenLimits = tokenLimits_;
+        specialClassesCounters = new uint256[](tokenLimits_.length);
+        for (uint256 i = 2; i < specialClassesBurnRates.length - 1; i++) {
+            specialClassesCounters[i] = specialClassesTokenLimits[i + 1] + 1;
         }
-        specialSeriesCounters[specialSeriesBurnRates.length - 1] = 1;
+        specialClassesCounters[specialClassesBurnRates.length - 1] = 1;
+    }
+
+    /**
+        @dev    Call Reentrancy Guard
+    */
+    modifier nonReentrant() {
+        require(_tokenId == _NOT_USED, "XENFT: Reentrancy detected");
+        _tokenId = _USED;
+        _;
+        _tokenId = _NOT_USED;
+    }
+
+    /**
+        @dev    Start of Operations Guard
+    */
+    modifier notBeforeStart() {
+        require(block.number > startBlockNumber, "XENFT: Not active yet");
+        _;
     }
 
     // INTERFACES & STANDARDS
@@ -275,13 +312,13 @@ contract XENTorrent is
         @dev implements IBurnRedeemable interface for burning XEN and completing Bulk Mint for limited series
      */
     function onTokenBurned(address user, uint256 burned) external {
-        require(_tokenId > 0, "XENFT: illegal callback state");
+        require(_tokenId != _NOT_USED, "XENFT: illegal callback state");
         require(msg.sender == address(xenCrypto), "XENFT: illegal callback caller");
-        _safeMint(user, _tokenId);
         _ownedTokens[user].addItem(_tokenId);
         xenBurned[_tokenId] = burned;
+        _safeMint(user, _tokenId);
         emit StartTorrent(user, vmuCount[_tokenId], mintInfo[_tokenId].getTerm());
-        _tokenId = 0;
+        _tokenId = _NOT_USED;
     }
 
     // IBurnableToken IMPLEMENTATION
@@ -289,7 +326,7 @@ contract XENTorrent is
     /**
         @dev burns XENTorrent XENFT which can be used by connected contracts services
      */
-    function burn(address user, uint256 tokenId) public {
+    function burn(address user, uint256 tokenId) public notBeforeStart nonReentrant {
         require(
             IERC165(_msgSender()).supportsInterface(type(IBurnRedeemable).interfaceId),
             "XENFT burn: not a supported contract"
@@ -367,11 +404,11 @@ contract XENTorrent is
     // SUPPORT FOR ERC2981 ROYALTY INFO
 
     /**
-        @dev Implements getting Royalty Info by supported operators
+        @dev Implements getting Royalty Info by supported operators. ROYALTY_BP is expressed in basis points
      */
     function royaltyInfo(uint256, uint256 salePrice) external view returns (address receiver, uint256 royaltyAmount) {
-        uint256 amount = (salePrice * ROYALTY_PCT) / 100;
-        return (_deployer, amount > ROYALTY_MIN_AMOUNT ? amount : ROYALTY_MIN_AMOUNT);
+        receiver = _royaltyReceiver;
+        royaltyAmount = (salePrice * ROYALTY_BP) / 10_000;
     }
 
     // XEN TORRENT PRIVATE / INTERNAL HELPERS
@@ -384,16 +421,16 @@ contract XENTorrent is
     }
 
     /**
-        @dev Determines power group index for Collector Class
+        @dev Determines power group index for Collector Category
      */
     function _powerGroup(uint256 vmus, uint256 term) private pure returns (uint256) {
         return (vmus * term) / POWER_GROUP_SIZE;
     }
 
     /**
-        @dev calculates Collector Series index
+        @dev calculates Collector Class index
     */
-    function _seriesIdx(uint256 count, uint256 term) private pure returns (uint256 index) {
+    function _classIdx(uint256 count, uint256 term) private pure returns (uint256 index) {
         if (_powerGroup(count, term) > 7) return 7;
         return _powerGroup(count, term);
     }
@@ -402,8 +439,11 @@ contract XENTorrent is
         @dev internal helper to determine special class tier based on XEN to be burned
      */
     function _specialTier(uint256 burning) private view returns (uint256) {
-        for (uint256 i = specialSeriesBurnRates.length - 1; i > 0; i--) {
-            if (burning > specialSeriesBurnRates[i] - 1) {
+        for (uint256 i = specialClassesBurnRates.length - 1; i > 0; i--) {
+            if (specialClassesBurnRates[i] == 0) {
+                return 0;
+            }
+            if (burning > specialClassesBurnRates[i] - 1) {
                 return i;
             }
         }
@@ -421,11 +461,11 @@ contract XENTorrent is
         uint256 tokenId
     ) private view returns (uint256) {
         bool apex = isApex(tokenId);
-        uint256 series = _seriesIdx(count, term);
-        if (apex) series = uint8(7 + _specialTier(burning)) | 0x80; // Apex Class
-        if (burning > 0 && !apex) series = uint8(8) | 0x40; // Limited Class
+        uint256 _class = _classIdx(count, term);
+        if (apex) _class = uint8(7 + _specialTier(burning)) | 0x80; // Apex Class
+        if (burning > 0 && !apex) _class = uint8(8) | 0x40; // Limited Class
         (, , uint256 maturityTs, uint256 rank, uint256 amp, uint256 eaa) = xenCrypto.userMints(proxy);
-        return MintInfo.encodeMintInfo(term, maturityTs, rank, amp, eaa, series, false);
+        return MintInfo.encodeMintInfo(term, maturityTs, rank, amp, eaa, _class, false);
     }
 
     /**
@@ -466,15 +506,15 @@ contract XENTorrent is
         // burn possibility has already been verified
         uint256 tier = _specialTier(burning);
         if (tier == 1) {
-            require(count > SPECIAL_CLASSES_VMU_THRESHOLD, "XENFT: under req VMU count");
-            require(block.timestamp < genesisTs + LIMITED_CLASS_TIME_THRESHOLD, "XENFT: limited time expired");
+            require(count > SPECIAL_CATEGORIES_VMU_THRESHOLD, "XENFT: under req VMU count");
+            require(block.timestamp < genesisTs + LIMITED_CATEGORY_TIME_THRESHOLD, "XENFT: limited time expired");
             return tokenIdCounter++;
         }
         if (tier > 1) {
             require(_msgSender() == tx.origin, "XENFT: only EOA allowed for this category");
-            require(count > SPECIAL_CLASSES_VMU_THRESHOLD, "XENFT: under req VMU count");
-            require(specialSeriesCounters[tier] < specialSeriesTokenLimits[tier] + 1, "XENFT: series sold out");
-            return specialSeriesCounters[tier]++;
+            require(count > SPECIAL_CATEGORIES_VMU_THRESHOLD, "XENFT: under req VMU count");
+            require(specialClassesCounters[tier] < specialClassesTokenLimits[tier] + 1, "XENFT: class sold out");
+            return specialClassesCounters[tier]++;
         }
         return tokenIdCounter++;
     }
@@ -489,40 +529,43 @@ contract XENTorrent is
     }
 
     /**
-        @dev determines if tokenId corresponds to limited series
+        @dev determines if tokenId corresponds to Limited Category
      */
     function isApex(uint256 tokenId) public pure returns (bool apex) {
-        apex = tokenId < COLLECTOR_CLASS_COUNTER;
+        apex = tokenId < COMMON_CATEGORY_COUNTER;
     }
 
     // PUBLIC TRANSACTIONAL INTERFACE
 
     /**
-        @dev public torrent interface. initiates Bulk Mint (Torrent) Operation (ordinary series)
+        @dev    public XEN Torrent interface
+                initiates Bulk Mint (Torrent) Operation (Common Category)
      */
-    function bulkClaimRank(uint256 count, uint256 term) public returns (uint256) {
+    function bulkClaimRank(uint256 count, uint256 term) public notBeforeStart returns (uint256 tokenId) {
+        require(_tokenId == _NOT_USED, "XENFT: reentrancy detected");
         require(count > 0, "XENFT: Illegal count");
         require(term > 0, "XENFT: Illegal term");
-        uint256 tokenId = _getTokenId(count, 0);
-        _bulkClaimRank(count, term, tokenId, 0);
-        _safeMint(_msgSender(), tokenId);
-        _ownedTokens[_msgSender()].addItem(tokenId);
+        _tokenId = _getTokenId(count, 0);
+        _bulkClaimRank(count, term, _tokenId, 0);
+        _ownedTokens[_msgSender()].addItem(_tokenId);
+        _safeMint(_msgSender(), _tokenId);
         emit StartTorrent(_msgSender(), count, term);
-        return tokenId;
+        tokenId = _tokenId;
+        _tokenId = _NOT_USED;
     }
 
     /**
-        @dev public torrent interface. initiates Bulk Mint (Torrent) Operation (special series)
+        @dev public torrent interface. initiates Bulk Mint (Torrent) Operation (Special Category)
      */
     function bulkClaimRankLimited(
         uint256 count,
         uint256 term,
         uint256 burning
-    ) public returns (uint256) {
-        require(_tokenId == 0, "XENFT: reentrancy detected");
+    ) public notBeforeStart returns (uint256) {
+        require(_tokenId == _NOT_USED, "XENFT: reentrancy detected");
         require(count > 0, "XENFT: Illegal count");
         require(term > 0, "XENFT: Illegal term");
-        require(burning > specialSeriesBurnRates[1] - 1, "XENFT: not enough burn amount");
+        require(burning > specialClassesBurnRates[1] - 1, "XENFT: not enough burn amount");
         uint256 balance = IERC20(xenCrypto).balanceOf(_msgSender());
         require(balance > burning - 1, "XENFT: not enough XEN balance");
         uint256 approved = IERC20(xenCrypto).allowance(_msgSender(), address(this));
@@ -536,7 +579,7 @@ contract XENTorrent is
     /**
         @dev public torrent interface. initiates Mint Reward claim and collection and terminates Torrent Operation
      */
-    function bulkClaimMintReward(uint256 tokenId, address to) external {
+    function bulkClaimMintReward(uint256 tokenId, address to) external notBeforeStart nonReentrant {
         require(ownerOf(tokenId) == _msgSender(), "XENFT: Incorrect owner");
         require(to != address(0), "XENFT: Illegal address");
         require(!mintInfo[tokenId].getRedeemed(), "XENFT: Already redeemed");

@@ -8,10 +8,10 @@ pragma solidity ^0.8.10;
 //      | rank (uint128)
 //      | amp (uint16)
 //      | eaa (uint16)
-//      | series (uint8):
+//      | class (uint8):
 //          [7] isApex
 //          [6] isLimited
-//          [0-5] powerSeriesIdx
+//          [0-5] powerGroupIdx
 //      | redeemed (uint8)
 library MintInfo {
     /**
@@ -32,11 +32,11 @@ library MintInfo {
         uint256 rank,
         uint256 amp,
         uint256 eaa,
-        uint256 series,
+        uint256 class_,
         bool redeemed
     ) public pure returns (uint256 info) {
         info = info | (toU256(redeemed) & 0xFF);
-        info = info | ((series & 0xFF) << 8);
+        info = info | ((class_ & 0xFF) << 8);
         info = info | ((eaa & 0xFFFF) << 16);
         info = info | ((amp & 0xFFFF) << 32);
         info = info | ((rank & 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF) << 48);
@@ -56,7 +56,7 @@ library MintInfo {
             uint256 rank,
             uint256 amp,
             uint256 eaa,
-            uint256 series,
+            uint256 class,
             bool apex,
             bool limited,
             bool redeemed
@@ -67,7 +67,7 @@ library MintInfo {
         rank = uint128(info >> 48);
         amp = uint16(info >> 32);
         eaa = uint16(info >> 16);
-        series = uint8(info >> 8) & 0x3F;
+        class = uint8(info >> 8) & 0x3F;
         apex = (uint8(info >> 8) & 0x80) > 0;
         limited = (uint8(info >> 8) & 0x40) > 0;
         redeemed = uint8(info) == 1;
@@ -111,16 +111,16 @@ library MintInfo {
     /**
         @dev extracts `redeemed` prop from encoded MintInfo
      */
-    function getSeries(uint256 info)
+    function getClass(uint256 info)
         public
         pure
         returns (
-            uint256 series,
+            uint256 class_,
             bool apex,
             bool limited
         )
     {
-        (, , , , , series, apex, limited, ) = decodeMintInfo(info);
+        (, , , , , class_, apex, limited, ) = decodeMintInfo(info);
     }
 
     /**

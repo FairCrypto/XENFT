@@ -70,7 +70,7 @@ library Metadata {
     }
 
     /**
-        @dev private helper to generate SVG gradients for special XENFT series
+        @dev private helper to generate SVG gradients for special XENFT categories
      */
     function _specialClassGradients(bool rare) private pure returns (SVG.Gradient[] memory gradients) {
         uint256[3] memory specialColors = rare ? _huesApex() : _huesLimited();
@@ -89,9 +89,9 @@ library Metadata {
     }
 
     /**
-        @dev private helper to generate SVG gradients for regular XENFT series
+        @dev private helper to generate SVG gradients for common XENFT category
      */
-    function _regularSeriesGradients(uint256 vmus, uint256 term)
+    function _commonCategoryGradients(uint256 vmus, uint256 term)
         private
         pure
         returns (SVG.Gradient[] memory gradients)
@@ -123,14 +123,6 @@ library Metadata {
         });
     }
 
-    /**
-        @dev private helper to construct cRank prop of NFT metadata
-     */
-    function _cRankProp(uint256 rank, uint256 count) private pure returns (bytes memory) {
-        if (count == 1) return abi.encodePacked(rank.toString());
-        return abi.encodePacked(rank.toString(), "..", (rank + count - 1).toString());
-    }
-
     // PUBLIC INTERFACE
 
     /**
@@ -144,7 +136,7 @@ library Metadata {
         uint256 burned
     ) external view returns (bytes memory) {
         string memory symbol = IERC20Metadata(token).symbol();
-        (uint256 seriesIdx, bool rare, bool limited) = info.getSeries();
+        (uint256 classIds, bool rare, bool limited) = info.getClass();
         SVG.SvgParams memory params = SVG.SvgParams({
             symbol: symbol,
             xenAddress: token,
@@ -156,31 +148,31 @@ library Metadata {
             amp: info.getAMP(),
             eaa: info.getEAA(),
             xenBurned: burned,
-            series: StringData.getSeriesName(StringData.SERIES, seriesIdx),
+            series: StringData.getClassName(StringData.CLASSES, classIds),
             redeemed: info.getRedeemed()
         });
         uint256 quoteIdx = uint256(keccak256(abi.encode(info))) % StringData.QUOTES_COUNT;
         if (rare || limited) {
             return SVG.image(params, _specialClassGradients(rare), quoteIdx, rare, limited);
         }
-        return SVG.image(params, _regularSeriesGradients(count, info.getTerm()), quoteIdx, rare, limited);
+        return SVG.image(params, _commonCategoryGradients(count, info.getTerm()), quoteIdx, rare, limited);
     }
 
     function _attr1(
         uint256 count,
         uint256 rank,
-        uint256 series
+        uint256 class_
     ) private pure returns (bytes memory) {
         return
             abi.encodePacked(
-                '{"trait_type":"Series","value":"',
-                StringData.getSeriesName(StringData.SERIES, series),
+                '{"trait_type":"Class","value":"',
+                StringData.getClassName(StringData.CLASSES, class_),
                 '"},'
                 '{"trait_type":"VMUs","value":"',
                 count.toString(),
                 '"},'
                 '{"trait_type":"cRank","value":"',
-                _cRankProp(rank, count),
+                rank.toString(),
                 '"},'
             );
     }
@@ -228,10 +220,10 @@ library Metadata {
     }
 
     function _attr4(bool apex, bool limited) private pure returns (bytes memory) {
-        string memory class_ = "Collector";
-        if (limited) class_ = "Limited";
-        if (apex) class_ = "Apex";
-        return abi.encodePacked('{"trait_type":"Class","value":"', class_, '"}');
+        string memory category = "Collector";
+        if (limited) category = "Limited";
+        if (apex) category = "Apex";
+        return abi.encodePacked('{"trait_type":"Category","value":"', category, '"}');
     }
 
     /**

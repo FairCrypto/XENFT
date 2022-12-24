@@ -9,7 +9,7 @@ const {toBigInt} = require("../src/utils");
 const XENCrypto = artifacts.require("XENCrypto");
 const XENTorrent = artifacts.require("XENTorrent");
 
-const { burnRates, rareLimits, Series } = require('../config/specialNFTs.test.js');
+const { burnRates, rareLimits, Series, startBlock } = require('../config/genesisParams.test');
 
 require('dotenv').config();
 
@@ -25,7 +25,7 @@ const assertAttribute = (attributes = []) => (name, value) => {
     }
 }
 
-contract("XENFTs --- Collector class", async accounts => {
+contract("XENFTs --- Collector category", async accounts => {
 
     let token;
     let xeNFT;
@@ -33,6 +33,7 @@ contract("XENFTs --- Collector class", async accounts => {
     let virtualMinters = [];
     let genesisTs = 0;
     let tokenId;
+    let currentBlock;
     const term = 10;
     const term2= 100;
     const count = 10;
@@ -42,6 +43,7 @@ contract("XENFTs --- Collector class", async accounts => {
         try {
             token = await XENCrypto.deployed();
             xeNFT = await XENTorrent.deployed();
+            currentBlock = await web3.eth.getBlockNumber();
             xenCryptoAddress = token.address;
         } catch (e) {
             console.error(e)
@@ -63,53 +65,53 @@ contract("XENFTs --- Collector class", async accounts => {
     })
 
     it("Should read XEN Crypto constructor-set params `specialSeriesBurnRates`", async () => {
-        assert.ok(await xeNFT.specialSeriesBurnRates(Series.COLLECTOR)
+        assert.ok(await xeNFT.specialClassesBurnRates(Series.COLLECTOR)
             .then(toBigInt) === burnRates[Series.COLLECTOR] * ether);
-        assert.ok(await xeNFT.specialSeriesBurnRates(Series.LIMITED)
+        assert.ok(await xeNFT.specialClassesBurnRates(Series.LIMITED)
             .then(toBigInt) === burnRates[Series.LIMITED] * ether);
-        assert.ok(await xeNFT.specialSeriesBurnRates(Series.RARE)
+        assert.ok(await xeNFT.specialClassesBurnRates(Series.RARE)
             .then(toBigInt) === burnRates[Series.RARE] * ether);
-        assert.ok(await xeNFT.specialSeriesBurnRates(Series.EPIC)
+        assert.ok(await xeNFT.specialClassesBurnRates(Series.EPIC)
             .then(toBigInt) === burnRates[Series.EPIC] * ether);
-        assert.ok(await xeNFT.specialSeriesBurnRates(Series.LEGENDARY)
+        assert.ok(await xeNFT.specialClassesBurnRates(Series.LEGENDARY)
             .then(toBigInt) === burnRates[Series.LEGENDARY] * ether);
-        assert.ok(await xeNFT.specialSeriesBurnRates(Series.EXOTIC)
+        assert.ok(await xeNFT.specialClassesBurnRates(Series.EXOTIC)
             .then(toBigInt) === burnRates[Series.EXOTIC] * ether);
-        assert.ok(await xeNFT.specialSeriesBurnRates(Series.XUNICORN)
+        assert.ok(await xeNFT.specialClassesBurnRates(Series.XUNICORN)
             .then(toBigInt) === burnRates[Series.XUNICORN] * ether);
     })
 
     it("Should read XEN Crypto constructor-set params `specialSeriesTokenLimits`", async () => {
-        assert.ok(await xeNFT.specialSeriesTokenLimits(Series.COLLECTOR)
+        assert.ok(await xeNFT.specialClassesTokenLimits(Series.COLLECTOR)
             .then(_ => _.toNumber()) === rareLimits[Series.COLLECTOR]);
-        assert.ok(await xeNFT.specialSeriesTokenLimits(Series.LIMITED)
+        assert.ok(await xeNFT.specialClassesTokenLimits(Series.LIMITED)
             .then(_ => _.toNumber()) === rareLimits[Series.LIMITED]);
-        assert.ok(await xeNFT.specialSeriesTokenLimits(Series.RARE)
+        assert.ok(await xeNFT.specialClassesTokenLimits(Series.RARE)
             .then(_ => _.toNumber()) === rareLimits[Series.RARE]);
-        assert.ok(await xeNFT.specialSeriesTokenLimits(Series.EPIC)
+        assert.ok(await xeNFT.specialClassesTokenLimits(Series.EPIC)
             .then(_ => _.toNumber()) === rareLimits[Series.EPIC]);
-        assert.ok(await xeNFT.specialSeriesTokenLimits(Series.LEGENDARY)
+        assert.ok(await xeNFT.specialClassesTokenLimits(Series.LEGENDARY)
             .then(_ => _.toNumber()) === rareLimits[Series.LEGENDARY]);
-        assert.ok(await xeNFT.specialSeriesTokenLimits(Series.EXOTIC)
+        assert.ok(await xeNFT.specialClassesTokenLimits(Series.EXOTIC)
             .then(_ => _.toNumber()) === rareLimits[Series.EXOTIC]);
-        assert.ok(await xeNFT.specialSeriesTokenLimits(Series.XUNICORN)
+        assert.ok(await xeNFT.specialClassesTokenLimits(Series.XUNICORN)
             .then(_ => _.toNumber()) === rareLimits[Series.XUNICORN]);
     })
 
     it("Should read XEN Crypto constructor-set params `specialSeriesCounters`", async () => {
-        assert.ok(await xeNFT.specialSeriesCounters(Series.COLLECTOR)
+        assert.ok(await xeNFT.specialClassesCounters(Series.COLLECTOR)
             .then(_ => _.toNumber()) === 0);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.LIMITED)
+        assert.ok(await xeNFT.specialClassesCounters(Series.LIMITED)
             .then(_ => _.toNumber()) === 0);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.RARE)
+        assert.ok(await xeNFT.specialClassesCounters(Series.RARE)
             .then(_ => _.toNumber()) === rareLimits[Series.EPIC] + 1);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.EPIC)
+        assert.ok(await xeNFT.specialClassesCounters(Series.EPIC)
             .then(_ => _.toNumber()) === rareLimits[Series.LEGENDARY] + 1);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.LEGENDARY)
+        assert.ok(await xeNFT.specialClassesCounters(Series.LEGENDARY)
             .then(_ => _.toNumber()) === rareLimits[Series.EXOTIC] + 1);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.EXOTIC)
+        assert.ok(await xeNFT.specialClassesCounters(Series.EXOTIC)
             .then(_ => _.toNumber()) === rareLimits[Series.XUNICORN] + 1);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.XUNICORN)
+        assert.ok(await xeNFT.specialClassesCounters(Series.XUNICORN)
             .then(_ => _.toNumber()) === 1);
     })
 
@@ -119,6 +121,18 @@ contract("XENFTs --- Collector class", async accounts => {
         const expectedCurrentMaxTerm = 100 * 24 * 3600;
         assert.ok(await token.getCurrentMaxTerm().then(_ => _.toNumber()) === expectedCurrentMaxTerm);
     })
+
+    it("Should reject bulkClaimRank transaction submitted before start block", async () => {
+        assert.ok(currentBlock <= startBlock);
+        assert.rejects(() => xeNFT.bulkClaimRank(1, 1, { from: accounts[0] }), 'XENFT: Not active yet');
+        const blockDelta = startBlock - currentBlock + 1;
+        const blocks = Array(blockDelta).fill(null);
+        for await (const _ of blocks) {
+            await timeMachine.advanceBlock();
+        }
+        currentBlock = await web3.eth.getBlockNumber();
+        assert.ok(currentBlock > startBlock);
+    });
 
     it("Should reject bulkClaimRank transaction with incorrect count OR term", async () => {
         assert.rejects(() => xeNFT.bulkClaimRank(0, term, { from: accounts[0] }));
@@ -191,7 +205,7 @@ contract("XENFTs --- Collector class", async accounts => {
         assert.ok('image' in metadata);
         assert.ok('attributes' in metadata);
         assert.ok(Array.isArray(metadata.attributes));
-        assertAttribute(metadata.attributes)('Class', 'Collector');
+        assertAttribute(metadata.attributes)('Category', 'Collector');
         assert.ok(metadata.image.startsWith('data:image/svg+xml;base64,'));
         const imageBase64 = metadata.image.replace('data:image/svg+xml;base64,', '');
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();
@@ -233,8 +247,13 @@ contract("XENFTs --- Collector class", async accounts => {
         assert.ok(await xeNFT.balanceOf(accounts[0]).then(_ => _.toNumber()) === 1);
     })
 
-    it("Should generate SVG of a redeemed NFT", async () => {
-        //extraPrint && console.log(await xeNFT.genSVG(1));
+    it("Should return a `royaltyInfo` for a given price", async () => {
+        const sellingTokenId = 1;
+        const salePrice = 1_000;
+        const royaltyPct = 2.5;
+        const { receiver, royaltyAmount } = await xeNFT.royaltyInfo(sellingTokenId, salePrice);
+        assert.ok(receiver === accounts[0]);
+        assert.ok(royaltyAmount.toNumber() === salePrice * royaltyPct / 100);
     })
 
     it("Should reject XENFT transfer by its owner when in blackout period, post `bulkClaimMintReward`", async () => {
@@ -280,7 +299,7 @@ contract("XENFTs --- Collector class", async accounts => {
         assert.ok('image' in metadata);
         assert.ok('attributes' in metadata);
         assert.ok(Array.isArray(metadata.attributes));
-        assertAttribute(metadata.attributes)('Class', 'Collector');
+        assertAttribute(metadata.attributes)('Category', 'Collector');
         assert.ok(metadata.image.startsWith('data:image/svg+xml;base64,'));
         const imageBase64 = metadata.image.replace('data:image/svg+xml;base64,', '');
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();

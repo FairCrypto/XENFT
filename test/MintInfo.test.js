@@ -18,10 +18,10 @@ const maxUint256 = 2n ** 256n - 1n;
     | rank (uint128)
     | amp (uint16)
     | eaa (uint16)
-    | series (uint8):
+    | category/series (uint8):
       [7] isAPex
       [6] isLimited
-      [0-5] powerSeriesIdx
+      [0-5] powerGroupIdx
     | redeemed (uint8)
  */
 contract("MintInfo Library", async () => {
@@ -38,13 +38,13 @@ contract("MintInfo Library", async () => {
         const s = 0b0000_0110;
         const encodedMintInfo = await mintInfo.encodeMintInfo(1,2,3,4,5,(s | l) | r,false).then(toBigInt);
         // console.log(BigInt(mintInfo).toString(2))
-        const { term, maturityTs, rank, amp, eaa, series, apex, limited, redeemed } =  await mintInfo.decodeMintInfo(encodedMintInfo);
+        const { term, maturityTs, rank, amp, eaa, class: class_, apex, limited, redeemed } =  await mintInfo.decodeMintInfo(encodedMintInfo);
         assert.ok(term.toNumber() === 1);
         assert.ok(maturityTs.toNumber() === 2);
         assert.ok(rank.toNumber() === 3);
         assert.ok(amp.toNumber() === 4);
         assert.ok(eaa.toNumber() === 5);
-        assert.ok(series.toNumber() === 6);
+        assert.ok(class_.toNumber() === 6);
         assert.ok(apex === true);
         assert.ok(limited === true);
         assert.ok(redeemed === false);
@@ -53,13 +53,13 @@ contract("MintInfo Library", async () => {
     it("Should perform mintInfo encoding/decoding 2", async () => {
         const s = 0b0000_0110;
         const encodedMintInfo = await mintInfo.encodeMintInfo(1 ,2, 3, 4, 5, s, false).then(toBigInt);
-        const { term, maturityTs, rank, amp, eaa, series, apex, limited, redeemed } =  await mintInfo.decodeMintInfo(encodedMintInfo);
+        const { term, maturityTs, rank, amp, eaa, class: class_, apex, limited, redeemed } =  await mintInfo.decodeMintInfo(encodedMintInfo);
         assert.ok(term.toNumber() === 1);
         assert.ok(maturityTs.toNumber() === 2);
         assert.ok(rank.toNumber() === 3);
         assert.ok(amp.toNumber() === 4);
         assert.ok(eaa.toNumber() === 5);
-        assert.ok(series.toNumber() === 6);
+        assert.ok(class_.toNumber() === 6);
         assert.ok(apex === false);
         assert.ok(limited === false);
         assert.ok(redeemed === false);
@@ -146,16 +146,16 @@ contract("MintInfo Library", async () => {
             s,
             false
         ).then(toBigInt);
-        const { term, maturityTs, rank, amp, eaa, series } =  await mintInfo.decodeMintInfo(encodedMintInfo);
+        const { term, maturityTs, rank, amp, eaa, class: class_ } =  await mintInfo.decodeMintInfo(encodedMintInfo);
         assert.ok(term.toNumber() === 1);
         assert.ok(maturityTs.toNumber() === 2);
         assert.ok(rank.toNumber() === 3);
         assert.ok(amp.toNumber() === 4);
         assert.ok(toBigInt(eaa) === maxUint16);
-        assert.ok(series.toNumber() === 6);
+        assert.ok(class_.toNumber() === 6);
     });
 
-    it("Should encode correctly in overflow conditions (series/rare/limited)", async () => {
+    it("Should encode correctly in overflow conditions (class/rare/limited)", async () => {
         // const s = 0b0000_0110;
         const encodedMintInfo = await mintInfo.encodeMintInfo(
             1,
@@ -166,13 +166,13 @@ contract("MintInfo Library", async () => {
             maxUint256,
             false
         ).then(toBigInt);
-        const { term, maturityTs, rank, amp, eaa, series, apex, limited, redeemed } =  await mintInfo.decodeMintInfo(encodedMintInfo);
+        const { term, maturityTs, rank, amp, eaa, class: class_, apex, limited, redeemed } =  await mintInfo.decodeMintInfo(encodedMintInfo);
         assert.ok(term.toNumber() === 1);
         assert.ok(maturityTs.toNumber() === 2);
         assert.ok(rank.toNumber() === 3);
         assert.ok(amp.toNumber() === 4);
         assert.ok(eaa.toNumber() === 5);
-        assert.ok(toBigInt(series) === BigInt(0x3F));
+        assert.ok(toBigInt(class_) === BigInt(0x3F));
         assert.ok(apex === true);
         assert.ok(limited === true);
         assert.ok(redeemed === false);
@@ -189,13 +189,13 @@ contract("MintInfo Library", async () => {
             s,
             maxUint256
         ).then(toBigInt);
-        const { term, maturityTs, rank, amp, eaa, series, apex, limited, redeemed } =  await mintInfo.decodeMintInfo(encodedMintInfo);
+        const { term, maturityTs, rank, amp, eaa, class: class_, apex, limited, redeemed } =  await mintInfo.decodeMintInfo(encodedMintInfo);
         assert.ok(term.toNumber() === 1);
         assert.ok(maturityTs.toNumber() === 2);
         assert.ok(rank.toNumber() === 3);
         assert.ok(amp.toNumber() === 4);
         assert.ok(eaa.toNumber() === 5);
-        assert.ok(series.toNumber() === 6);
+        assert.ok(class_.toNumber() === 6);
         assert.ok(apex === false);
         assert.ok(limited === false);
         assert.ok(redeemed === true);

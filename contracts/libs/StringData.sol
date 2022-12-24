@@ -43,9 +43,9 @@ library StringData {
             '"Your past does not equal your future." - Tony Robbins            '
             '"Be the path. Do not seek it." - Yara Tschallener                 '
         );
-    uint256 public constant SERIES_COUNT = 14;
-    uint256 public constant SERIES_NAME_LENGTH = 10;
-    bytes public constant SERIES =
+    uint256 public constant CLASSES_COUNT = 14;
+    uint256 public constant CLASSES_NAME_LENGTH = 10;
+    bytes public constant CLASSES =
         bytes(
             "Ruby      "
             "Opal      "
@@ -72,8 +72,8 @@ library StringData {
         return string(quotes[index * QUOTE_LENGTH:(index + 1) * QUOTE_LENGTH]);
     }
 
-    function getSeriesName(bytes calldata names, uint256 index) external pure returns (string memory) {
-        if (index < SERIES_COUNT) return string(names[index * SERIES_NAME_LENGTH:(index + 1) * SERIES_NAME_LENGTH]);
+    function getClassName(bytes calldata names, uint256 index) external pure returns (string memory) {
+        if (index < CLASSES_COUNT) return string(names[index * CLASSES_NAME_LENGTH:(index + 1) * CLASSES_NAME_LENGTH]);
         return "";
     }
 }
