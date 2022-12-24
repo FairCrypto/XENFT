@@ -25,19 +25,42 @@ module.exports = async function (deployer, network) {
     await deployer.deploy(Metadata);
     await deployer.link(Metadata, XENTorrent);
 
-    const { burnRates, rareLimits, forwarder } = (network === 'test' || network === 'ganache')
-        ? require('../config/specialNFTs.test.js')
-        : require('../config/specialNFTs.js');
+    const { burnRates, rareLimits, forwarder, startBlock: sb, royaltyReceiver: rr } = (network === 'test' || network === 'ganache')
+        ? require('../config/genesisParams.test.js')
+        : require('../config/genesisParams.js');
+
+    const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+    const startBlock = process.env[`${network.toUpperCase()}_START_BLOCK`] || sb || 0;
+    const royaltyReceiver = process.env[`${network.toUpperCase()}_ROYALTY_RECEIVER`] || rr || ZERO_ADDRESS;
+
+    console.log('    start block:', startBlock);
+    console.log('    royalty receiver:', royaltyReceiver);
 
     const ether = 10n ** 18n;
     const burnRatesParam = burnRates.map(r => r * ether);
 
     if (xenContractAddress) {
-        await deployer.deploy(XENTorrent, xenContractAddress, burnRatesParam, rareLimits, forwarder);
+        await deployer.deploy(
+            XENTorrent,
+            xenContractAddress,
+            burnRatesParam,
+            rareLimits,
+            startBlock,
+            forwarder,
+            royaltyReceiver
+        );
     } else {
         const xenContract = await XENCrypto.deployed();
         // console.log(network, xenContract?.address)
-        await deployer.deploy(XENTorrent, xenContract.address, burnRatesParam, rareLimits, forwarder);
+        await deployer.deploy(
+            XENTorrent,
+            xenContract.address,
+            burnRatesParam,
+            rareLimits,
+            startBlock,
+            forwarder,
+            royaltyReceiver
+        );
     }
     if (network === 'test') {
         const xenftAddress = XENTorrent.address;

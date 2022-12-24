@@ -8,7 +8,7 @@ const XENCrypto = artifacts.require("XENCrypto");
 const XENTorrent = artifacts.require("XENTorrent");
 const TestBulkMinter = artifacts.require("TestBulkMinter");
 
-const { burnRates, rareLimits, Series } = require('../config/specialNFTs.test.js');
+const { burnRates, rareLimits, Series, startBlock} = require('../config/genesisParams.test');
 
 require('dotenv').config();
 
@@ -22,7 +22,7 @@ const assertAttribute = (attributes = []) => (name, value) => {
     }
 }
 
-contract("XENFTs --- Apex and Limited classes", async accounts => {
+contract("XENFTs --- Apex and Limited categories", async accounts => {
 
     let token;
     let xeNFT;
@@ -32,6 +32,7 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
     let tokenId;
     let burning;
     let xenBalance;
+    let currentBlock;
     const term = 10;
     // const term2 = 600;
     const countLimited = 100;
@@ -45,9 +46,22 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
             xeNFT = await XENTorrent.deployed();
             bulkMinter = await TestBulkMinter.deployed();
             xenCryptoAddress = token.address;
+            currentBlock = await web3.eth.getBlockNumber();
         } catch (e) {
             console.error(e)
         }
+    });
+
+    it("Should reject bulkClaimRank transaction submitted before start block", async () => {
+        assert.ok(currentBlock <= startBlock);
+        assert.rejects(() => xeNFT.bulkClaimRank(1, 1, { from: accounts[0] }), 'XENFT: Not active yet');
+        const blockDelta = startBlock - currentBlock + 1;
+        const blocks = Array(blockDelta).fill(null);
+        for await (const _ of blocks) {
+            await timeMachine.advanceBlock();
+        }
+        currentBlock = await web3.eth.getBlockNumber();
+        assert.ok(currentBlock > startBlock);
     });
 
     it("Should obtain initial XEN balance via regular bulk minting", async () => {
@@ -97,8 +111,8 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited + 2]?.topics[3]);
         extraPrint && console.log('      tokenId', tokenId);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.XUNICORN).then(_ => _.toNumber()) === 2);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.EXOTIC).then(_ => _.toNumber()) === rareLimits[Series.XUNICORN] + 1);
+        assert.ok(await xeNFT.specialClassesCounters(Series.XUNICORN).then(_ => _.toNumber()) === 2);
+        assert.ok(await xeNFT.specialClassesCounters(Series.EXOTIC).then(_ => _.toNumber()) === rareLimits[Series.XUNICORN] + 1);
         assert.ok(tokenId === BigInt(1n));
         assert.ok(virtualMinters.length === countLimited);
     });
@@ -144,8 +158,8 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
         assert.ok('image' in metadata);
         assert.ok('attributes' in metadata);
         assert.ok(Array.isArray(metadata.attributes));
-        assertAttribute(metadata.attributes)('Class', 'Apex');
-        assertAttribute(metadata.attributes)('Series', 'Xunicorn'.padEnd(10, ' '));
+        assertAttribute(metadata.attributes)('Category', 'Apex');
+        assertAttribute(metadata.attributes)('Class', 'Xunicorn'.padEnd(10, ' '));
         assertAttribute(metadata.attributes)('VMUs', countLimited.toString());
         assertAttribute(metadata.attributes)('Term', term.toString());
         assertAttribute(metadata.attributes)('Maturity Year');
@@ -174,7 +188,7 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited + 2]?.topics[3]);
         // extraPrint && console.log('      tokenId', tokenId);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.EXOTIC).then(_ => _.toNumber()) === rareLimits[Series.XUNICORN] + 2);
+        assert.ok(await xeNFT.specialClassesCounters(Series.EXOTIC).then(_ => _.toNumber()) === rareLimits[Series.XUNICORN] + 2);
         assert.ok(tokenId === BigInt(rareLimits[Series.XUNICORN]) + 1n);
         assert.ok(virtualMinters.length === countLimited);
     });
@@ -191,7 +205,7 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited + 2]?.topics[3]);
         // extraPrint && console.log('      tokenId', tokenId);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.LEGENDARY).then(_ => _.toNumber()) === rareLimits[Series.EXOTIC] + 2);
+        assert.ok(await xeNFT.specialClassesCounters(Series.LEGENDARY).then(_ => _.toNumber()) === rareLimits[Series.EXOTIC] + 2);
         assert.ok(tokenId === BigInt(rareLimits[Series.EXOTIC]) + 1n);
         assert.ok(virtualMinters.length === countLimited);
     });
@@ -208,7 +222,7 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited + 2]?.topics[3]);
         // extraPrint && console.log('      tokenId', tokenId);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.EPIC).then(_ => _.toNumber()) === rareLimits[Series.LEGENDARY] + 2);
+        assert.ok(await xeNFT.specialClassesCounters(Series.EPIC).then(_ => _.toNumber()) === rareLimits[Series.LEGENDARY] + 2);
         assert.ok(tokenId === BigInt(rareLimits[Series.LEGENDARY]) + 1n);
         assert.ok(virtualMinters.length === countLimited);
     });
@@ -225,7 +239,7 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited + 2]?.topics[3]);
         // extraPrint && console.log('      tokenId', tokenId);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.RARE).then(_ => _.toNumber()) === rareLimits[Series.EPIC] + 2);
+        assert.ok(await xeNFT.specialClassesCounters(Series.RARE).then(_ => _.toNumber()) === rareLimits[Series.EPIC] + 2);
         assert.ok(tokenId === BigInt(rareLimits[Series.EPIC]) + 1n);
         assert.ok(virtualMinters.length === countLimited);
     });
@@ -242,7 +256,7 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
         })
         tokenId = BigInt(res.receipt.rawLogs[countLimited + 2]?.topics[3]);
         // extraPrint && console.log('      tokenId', tokenId);
-        assert.ok(await xeNFT.specialSeriesCounters(Series.LIMITED).then(_ => _.toNumber()) === 0);
+        assert.ok(await xeNFT.specialClassesCounters(Series.LIMITED).then(_ => _.toNumber()) === 0);
         assert.ok(tokenId === 10_002n);
         assert.ok(virtualMinters.length === countLimited);
     });
@@ -267,7 +281,7 @@ contract("XENFTs --- Apex and Limited classes", async accounts => {
         assert.ok('image' in metadata);
         assert.ok('attributes' in metadata);
         assert.ok(Array.isArray(metadata.attributes));
-        assertAttribute(metadata.attributes)('Class', 'Limited');
+        assertAttribute(metadata.attributes)('Category', 'Limited');
         assert.ok(metadata.image.startsWith('data:image/svg+xml;base64,'));
         const imageBase64 = metadata.image.replace('data:image/svg+xml;base64,', '');
         const decodedImage = Buffer.from(imageBase64, 'base64').toString();
