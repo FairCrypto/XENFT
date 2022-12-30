@@ -1,12 +1,12 @@
 module.exports = {
     burnRates: [
         0n,
-        1_000n,
-        50_000n,
-        100_000n,
-        200_000n,
-        500_000n,
-        1_000_000n,
+        10_000_000n,
+        500_000_000n,
+        1_000_000_000n,
+        2_500_000_000n,
+        5_000_000_000n,
+        10_000_000_000n,
     ],
     rareLimits: [
         0,      // starts from 10_001
@@ -26,8 +26,8 @@ module.exports = {
         EXOTIC:     5,
         XUNICORN:   6,
     },
-    forwarder: '0x0000000000000000000000000000000000000000',
-    royaltyReceiver: '0x0000000000000000000000000000000000000000',
-    startBlock: 0,
+    forwarder: '0x0000000000000000000000000000000000000000',       // empty for now
+    royaltyReceiver: '0x0000000000000000000000000000000000000000', // overridden from ENV
+    startBlock: 16300528,
 }
 

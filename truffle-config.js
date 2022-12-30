@@ -26,6 +26,7 @@ module.exports = {
     goerli: {
       provider: () => new HDWalletProvider({
         privateKeys: privKeysRinkeby,
+        // providerOrUrl: 'https://lively-dry-diamond.ethereum-goerli.quiknode.pro/1ed51db407b0e06c97e47c66b367155b4b669666/',
         providerOrUrl: `https://:${infuraSecret}@goerli.infura.io/v3/${infuraKey}`,
         //providerOrUrl: `wss://:${infuraSecret}@goerli.infura.io/ws/v3/${infuraKey}`,
         pollingInterval: 56000
