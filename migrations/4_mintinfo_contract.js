@@ -9,7 +9,8 @@ module.exports = async function (deployer, network) {
     const mintInfoAddress = process.env[`${network.toUpperCase()}_MINTINFO_ADDRESS`];
 
     if (mintInfoAddress) {
-        const mintInfo = await MintInfo.new(mintInfoAddress);
+        console.log('using existing mintInfoAddress', mintInfoAddress);
+        const mintInfo = await MintInfo.at(mintInfoAddress);
         await deployer.link(mintInfo, Metadata);
         await deployer.link(mintInfo, XENTorrent);
     } else {

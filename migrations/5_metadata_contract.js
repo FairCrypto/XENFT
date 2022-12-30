@@ -8,7 +8,8 @@ module.exports = async function (deployer, network) {
     const metadataAddress = process.env[`${network.toUpperCase()}_METADATA_ADDRESS`];
 
     if (metadataAddress) {
-        const metadata = await Metadata.new(metadataAddress);
+        console.log('using existing metadataAddress', metadataAddress);
+        const metadata = await Metadata.at(metadataAddress);
         await deployer.link(metadata, XENTorrent);
     } else {
         await deployer.deploy(Metadata);

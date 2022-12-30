@@ -8,7 +8,8 @@ module.exports = async function (deployer, network) {
     const dateTimeAddress = process.env[`${network.toUpperCase()}_DATETIME_ADDRESS`];
 
     if (dateTimeAddress) {
-        const dateTime = await DateTime.new(dateTimeAddress);
+        console.log('using existing dateTimeAddress', dateTimeAddress);
+        const dateTime = await DateTime.at(dateTimeAddress);
         await deployer.link(dateTime, Metadata);
     } else {
         await deployer.deploy(DateTime);
