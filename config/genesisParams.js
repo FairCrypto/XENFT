@@ -1,12 +1,12 @@
 module.exports = {
     burnRates: [
         0n,
+        10n,
+        500n,
         1_000n,
-        50_000n,
-        100_000n,
-        200_000n,
-        500_000n,
-        1_000_000n,
+        2_000n,
+        5_000n,
+        10_000n,
     ],
     rareLimits: [
         0,      // starts from 10_001
