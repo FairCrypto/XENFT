@@ -64,7 +64,7 @@ contract XENTorrent is
 
     string public constant AUTHORS = "@MrJackLevin @lbelyaev faircrypto.org";
 
-    uint256 public constant ROYALTY_BP = 250;
+    uint256 public constant ROYALTY_BP = 500;
 
     // PUBLIC MUTABLE STATE
 
