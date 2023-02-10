@@ -13,7 +13,7 @@ const bscApiKey = process.env.BSC_SCAN_API_KEY || ''
 module.exports = {
   networks: {
     test: {
-      gasLimit: 15_000_000_000,
+      gasLimit: 30_000_000_000,
     },
     ganache: {
       host: "127.0.0.1",
