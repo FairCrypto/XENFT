@@ -60,7 +60,7 @@ contract XENTorrent is
     uint256 public constant SPECIAL_CATEGORIES_VMU_THRESHOLD = 99;
     uint256 public constant LIMITED_CATEGORY_TIME_THRESHOLD = 3_600 * 24 * 365;
 
-    uint256 public constant POWER_GROUP_SIZE = 2_375;
+    uint256 public constant POWER_GROUP_SIZE = 2_750;
 
     string public constant AUTHORS = "@MrJackLevin @lbelyaev faircrypto.org";
 
