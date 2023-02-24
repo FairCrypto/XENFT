@@ -57,7 +57,7 @@ contract XENTorrent is
 
     // XENFT categories' params
     uint256 public constant COMMON_CATEGORY_COUNTER = 10_001;
-    uint256 public constant SPECIAL_CATEGORIES_VMU_THRESHOLD = 34;
+    uint256 public constant SPECIAL_CATEGORIES_VMU_THRESHOLD = 39;
     uint256 public constant LIMITED_CATEGORY_TIME_THRESHOLD = 3_600 * 24 * 365;
 
     uint256 public constant POWER_GROUP_SIZE = 2_750;
