@@ -95,6 +95,12 @@ module.exports = {
       networkCheckTimeout: 999999
       //websockets: true
     },
+    dashboard: {
+      networkCheckTimeout: 30000,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      pollingInterval: 1000
+    }
   },
   mocha: {
     timeout: 100_000
@@ -113,6 +119,9 @@ module.exports = {
   },
   db: {
     enabled: false
+  },
+  dashboard: {
+    port: 24012,
   },
   plugins: ['truffle-plugin-verify'],
   api_keys: {
