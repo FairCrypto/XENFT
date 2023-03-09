@@ -9,6 +9,7 @@ const privKeysRinkeby = [ liveNetworkPK ]
 const etherscanApiKey = process.env.ETHERS_SCAN_API_KEY || ''
 const polygonApiKey = process.env.POLYGON_SCAN_API_KEY || ''
 const bscApiKey = process.env.BSC_SCAN_API_KEY || ''
+const snowtraceApiKey = process.env.SNOWTRACE_API_KEY || ''
 
 module.exports = {
   networks: {
@@ -127,6 +128,7 @@ module.exports = {
   api_keys: {
     etherscan: etherscanApiKey,
     bscscan: bscApiKey,
-    polygonscan: polygonApiKey
+    polygonscan: polygonApiKey,
+    snowtrace: snowtraceApiKey
   }
 };
