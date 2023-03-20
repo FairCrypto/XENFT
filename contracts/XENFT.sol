@@ -42,7 +42,7 @@ contract XENTorrent is
     IBurnRedeemable,
     ERC2771Context, // required to support meta transactions
     IERC2981, // required to support NFT royalties
-    ERC721("XEN Torrent", "XENT")
+    ERC721("XEN Torrent", "coXENT")
 {
     // HELPER LIBRARIES
 
@@ -57,10 +57,10 @@ contract XENTorrent is
 
     // XENFT categories' params
     uint256 public constant COMMON_CATEGORY_COUNTER = 10_001;
-    uint256 public constant SPECIAL_CATEGORIES_VMU_THRESHOLD = 99;
+    uint256 public constant SPECIAL_CATEGORIES_VMU_THRESHOLD = 149;
     uint256 public constant LIMITED_CATEGORY_TIME_THRESHOLD = 3_600 * 24 * 365;
 
-    uint256 public constant POWER_GROUP_SIZE = 7_500;
+    uint256 public constant POWER_GROUP_SIZE = 12_500;
 
     string public constant AUTHORS = "@MrJackLevin @lbelyaev faircrypto.org";
 
