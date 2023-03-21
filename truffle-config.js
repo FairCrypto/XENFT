@@ -95,6 +95,36 @@ module.exports = {
       networkCheckTimeout: 999999
       //websockets: true
     },
+    moonbase_alpha: {
+      provider: () => new HDWalletProvider({
+        privateKeys: privKeysRinkeby,
+        providerOrUrl: `https://rpc.testnet.moonbeam.network`,
+        pollingInterval: 56000
+      }),
+      network_id: 1287,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      pollingInterval: 1000,
+      skipDryRun: true,
+      from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      networkCheckTimeout: 999999
+      //websockets: true
+    },
+    moonbeam: {
+      provider: () => new HDWalletProvider({
+        privateKeys: privKeysRinkeby,
+        providerOrUrl: `https://rpc.ankr.com/moonbeam`,
+        pollingInterval: 56000
+      }),
+      network_id: 1284,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      pollingInterval: 1000,
+      skipDryRun: true,
+      from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      networkCheckTimeout: 999999
+      //websockets: true
+    },
   },
   mocha: {
     timeout: 100_000
