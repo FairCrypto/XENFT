@@ -57,10 +57,10 @@ module.exports = {
     pulsechain_testnet: {
       provider: () => new HDWalletProvider({
         privateKeys: privKeysRinkeby,
-        providerOrUrl: `https://rpc.v2b.testnet.pulsechain.com`,
+        providerOrUrl: `https://rpc.v3.testnet.pulsechain.com`,
         pollingInterval: 56000
       }),
-      network_id: 941,
+      network_id: 942,
       confirmations: 2,
       timeoutBlocks: 100,
       skipDryRun: true,
@@ -83,11 +83,72 @@ module.exports = {
     mumbai: {
       provider: () => new HDWalletProvider({
         privateKeys: privKeysRinkeby,
-        providerOrUrl: `https://rpc-mumbai.maticvigil.com/v1/53a113316e0a9e20bcf02b13dd504ac33aeea3ba`,
+        providerOrUrl: `https://rpc.ankr.com/polygon_mumbai`,
         //providerOrUrl: `https://rpc.ankr.com/polygon_mumbai`,
         pollingInterval: 56000
       }),
-      network_id: 80001,
+      network_id: 80001, //
+      confirmations: 2,
+      timeoutBlocks: 200,
+      pollingInterval: 1000,
+      skipDryRun: true,
+      from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      networkCheckTimeout: 999999
+      //websockets: true
+    },
+    polygon: {
+      provider: () => new HDWalletProvider({
+        privateKeys: privKeysRinkeby,
+        providerOrUrl: `https://rpc.ankr.com/polygon`,
+        //providerOrUrl: `https://rpc.ankr.com/polygon_mumbai`,
+        pollingInterval: 56000
+      }),
+      network_id: 137, //
+      confirmations: 2,
+      timeoutBlocks: 200,
+      pollingInterval: 1000,
+      skipDryRun: true,
+      from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      networkCheckTimeout: 999999
+      //websockets: true
+    },
+    optimism: {
+      provider: () => new HDWalletProvider({
+        privateKeys: privKeysRinkeby,
+        providerOrUrl: `https://optimism-mainnet.infura.io/v3/3e8615a3d89b49f381108b46b52f9712`,
+        pollingInterval: 56000
+      }),
+      network_id: 10,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      pollingInterval: 1000,
+      skipDryRun: true,
+      from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      networkCheckTimeout: 999999
+      //websockets: true
+    },
+    optimism_goerli: {
+      provider: () => new HDWalletProvider({
+        privateKeys: privKeysRinkeby,
+        providerOrUrl: `https://optimism-goerli.infura.io/v3/3e8615a3d89b49f381108b46b52f9712`,
+        pollingInterval: 56000
+      }),
+      network_id: 420,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      pollingInterval: 1000,
+      skipDryRun: true,
+      from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      networkCheckTimeout: 999999
+      //websockets: true
+    },
+    arbitrum_goerli: {
+      provider: () => new HDWalletProvider({
+        privateKeys: privKeysRinkeby,
+        providerOrUrl: `https://arbitrum-goerli.infura.io/v3/0c4485eb5a0f416d9beb05cd14efd01a`,
+        pollingInterval: 56000
+      }),
+      network_id: 421613,
       confirmations: 2,
       timeoutBlocks: 200,
       pollingInterval: 1000,
