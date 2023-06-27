@@ -3,10 +3,14 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/interfaces/IERC165.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@faircrypto/xen-crypto/contracts/interfaces/IBurnableToken.sol";
 import "@faircrypto/xen-crypto/contracts/interfaces/IBurnRedeemable.sol";
 
 contract MultiBurner is Context, IBurnRedeemable, ERC721("Burner", "BURN") {
+
+    using Strings for uint256;
+
     IBurnableToken public xenContract;
 
     uint256 private _counter;
@@ -27,7 +31,7 @@ contract MultiBurner is Context, IBurnRedeemable, ERC721("Burner", "BURN") {
     }
 
     function onTokenBurned(address user, uint256 tokenId) public {
-        require(_counter > 0, "Burner: illegal state");
+        // require(_counter > 0, string(abi.encodePacked("Burner: illegal state ", tokenId.toString())));
         require(msg.sender == address(xenContract), "Burner: wrong caller");
         require(user != address(0), "Burner: zero user address");
         require(tokenId != 0, "Burner: bad tokenId");

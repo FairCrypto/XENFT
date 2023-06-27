@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.10;
 
-import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
+// import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
 import "../XENFT.sol";
 
 contract TestBulkMinter is IERC721Receiver {
-    XENCrypto private _xenCrypto;
+    IERC20 private _xenCrypto;
     XENTorrent private _xenTorrent;
 
     constructor(address xenCrypto_, address xenTorrent_) {
-        _xenCrypto = XENCrypto(xenCrypto_);
+        _xenCrypto = IERC20(xenCrypto_);
         _xenTorrent = XENTorrent(xenTorrent_);
     }
 

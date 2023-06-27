@@ -16,6 +16,7 @@ import "./interfaces/IXENProxying.sol";
 import "./libs/MintInfo.sol";
 import "./libs/Metadata.sol";
 import "./libs/Array.sol";
+import "./VMU.sol";
 
 /*
 
@@ -37,7 +38,6 @@ import "./libs/Array.sol";
 contract XENTorrent is
     DefaultOperatorFilterer, // required to support OpenSea royalties
     IXENTorrent,
-    IXENProxying,
     IBurnableToken,
     IBurnRedeemable,
     ERC2771Context, // required to support meta transactions
@@ -114,9 +114,8 @@ contract XENTorrent is
     uint256 public immutable startBlockNumber;
 
     // PRIVATE STATE
+    IXENProxying private immutable _vmuProxy;
 
-    // original contract marking to distinguish from proxy copies
-    address private immutable _original;
     // original deployer address to be used for setting trusted forwarder
     address private immutable _deployer;
     // address to be used for royalties' tracking
@@ -148,8 +147,8 @@ contract XENTorrent is
         require(xenCrypto_ != address(0), "bad address");
         require(burnRates_.length == tokenLimits_.length && burnRates_.length > 0, "params mismatch");
         _tokenId = _NOT_USED;
-        _original = address(this);
         _deployer = msg.sender;
+        _vmuProxy = new VMU(xenCrypto_, address(this));
         _royaltyReceiver = royaltyReceiver_ == address(0) ? msg.sender : royaltyReceiver_;
         startBlockNumber = startBlockNumber_;
         genesisTs = block.timestamp;
@@ -246,36 +245,6 @@ contract XENTorrent is
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(dataURI)));
     }
 
-    // IMPLEMENTATION OF XENProxying INTERFACE
-    // FUNCTIONS IN PROXY COPY CONTRACTS (VMUs), CALLING ORIGINAL XEN CRYPTO CONTRACT
-    /**
-        @dev function callable only in proxy contracts from the original one => XENCrypto.claimRank(term)
-     */
-    function callClaimRank(uint256 term) external {
-        require(msg.sender == _original, "XEN Proxy: unauthorized");
-        bytes memory callData = abi.encodeWithSignature("claimRank(uint256)", term);
-        (bool success, ) = address(xenCrypto).call(callData);
-        require(success, "call failed");
-    }
-
-    /**
-        @dev function callable only in proxy contracts from the original one => XENCrypto.claimMintRewardAndShare()
-     */
-    function callClaimMintReward(address to) external {
-        require(msg.sender == _original, "XEN Proxy: unauthorized");
-        bytes memory callData = abi.encodeWithSignature("claimMintRewardAndShare(address,uint256)", to, uint256(100));
-        (bool success, ) = address(xenCrypto).call(callData);
-        require(success, "call failed");
-    }
-
-    /**
-        @dev function callable only in proxy contracts from the original one => destroys the proxy contract
-     */
-    function powerDown() external {
-        require(msg.sender == _original, "XEN Proxy: unauthorized");
-        selfdestruct(payable(address(0)));
-    }
-
     // OVERRIDING OF ERC-721 IMPLEMENTATION
     // ENFORCEMENT OF TRANSFER BLACKOUT PERIOD
 
@@ -285,7 +254,8 @@ contract XENTorrent is
     function _beforeTokenTransfer(
         address from,
         address,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256
     ) internal virtual override {
         if (from != address(0)) {
             uint256 maturityTs = mintInfo[tokenId].getMaturityTs();
@@ -300,7 +270,8 @@ contract XENTorrent is
     function _afterTokenTransfer(
         address from,
         address to,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256
     ) internal virtual override {
         _ownedTokens[from].removeItem(tokenId);
         _ownedTokens[to].addItem(tokenId);
@@ -479,7 +450,7 @@ contract XENTorrent is
     ) private {
         bytes memory bytecode = bytes.concat(
             bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
-            bytes20(address(this)),
+            bytes20(address(_vmuProxy)),
             bytes15(0x5af43d82803e903d91602b57fd5bf3)
         );
         bytes memory callData = abi.encodeWithSignature("callClaimRank(uint256)", term);
@@ -585,7 +556,7 @@ contract XENTorrent is
         require(!mintInfo[tokenId].getRedeemed(), "XENFT: Already redeemed");
         bytes memory bytecode = bytes.concat(
             bytes20(0x3D602d80600A3D3981F3363d3d373d3D3D363d73),
-            bytes20(address(this)),
+            bytes20(address(_vmuProxy)),
             bytes15(0x5af43d82803e903d91602b57fd5bf3)
         );
         uint256 end = vmuCount[tokenId] + 1;

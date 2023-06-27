@@ -28,6 +28,7 @@ module.exports = {
     },
     forwarder: '0x0000000000000000000000000000000000000000',
     royaltyReceiver: '0x0000000000000000000000000000000000000000',
-    startBlock: 20,
+    // startBlock: 20,
+    startBlock: 0,
 }
 
