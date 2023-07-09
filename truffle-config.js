@@ -125,6 +125,25 @@ module.exports = {
       // from: DEPLOYER_ADDRESS_X1,        // Account to send transactions from (default: accounts[0])
       // websocket: true         // Enable EventEmitter interface for web3 (default: false)
     },
+    leo: {
+      provider: () => new HDWalletProvider({
+        privateKeys: [process.env.SIM_PK],
+        // privateKeys: [process.env.PK_FTM],
+        //privateKeys: [process.env.PK_X1],
+        providerOrUrl: `https://x1-leotestnet.infrafc.org`,
+        // providerOrUrl: `http://localhost:8080`,
+        pollingInterval: 5_000
+      }),
+      network_id: 4003,       // Custom network
+      // gasLimit: 2_600_000,
+      // gasPrice: 500_000_000_000
+      // maxFeePerGas: 500_000_000_000,
+      // maxPriorityFeePerGas: 2_000_000_000
+      // gas: 8500000,           // Gas sent with each transaction (default: ~6700000)
+      // gasPrice: 20000000000,  // 20 gwei (in wei) (default: 100 gwei)
+      // from: DEPLOYER_ADDRESS_X1,        // Account to send transactions from (default: accounts[0])
+      // websocket: true         // Enable EventEmitter interface for web3 (default: false)
+    },
 
   },
   mocha: {
