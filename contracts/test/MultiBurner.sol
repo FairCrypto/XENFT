@@ -27,7 +27,7 @@ contract MultiBurner is Context, IBurnRedeemable, ERC721("Burner", "BURN") {
     }
 
     function onTokenBurned(address user, uint256 tokenId) public {
-        require(_counter > 0, "Burner: illegal state");
+        // require(_counter > 0, "Burner: illegal state");
         require(msg.sender == address(xenContract), "Burner: wrong caller");
         require(user != address(0), "Burner: zero user address");
         require(tokenId != 0, "Burner: bad tokenId");

@@ -285,7 +285,8 @@ contract XENTorrent is
     function _beforeTokenTransfer(
         address from,
         address,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256
     ) internal virtual override {
         if (from != address(0)) {
             uint256 maturityTs = mintInfo[tokenId].getMaturityTs();
@@ -300,7 +301,8 @@ contract XENTorrent is
     function _afterTokenTransfer(
         address from,
         address to,
-        uint256 tokenId
+        uint256 tokenId,
+        uint256
     ) internal virtual override {
         _ownedTokens[from].removeItem(tokenId);
         _ownedTokens[to].addItem(tokenId);
