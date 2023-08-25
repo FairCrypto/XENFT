@@ -42,7 +42,7 @@ contract XENTorrent is
     IBurnRedeemable,
     ERC2771Context, // required to support meta transactions
     IERC2981, // required to support NFT royalties
-    ERC721("XEN Torrent", "XENT")
+    ERC721("XEN Torrent", "cbXENT")
 {
     // HELPER LIBRARIES
 
