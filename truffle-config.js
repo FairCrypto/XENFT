@@ -96,6 +96,21 @@ module.exports = {
       networkCheckTimeout: 999999
       //websockets: true
     },
+    optimism_goerli: {
+      provider: () => new HDWalletProvider({
+        privateKeys: privKeysRinkeby,
+        providerOrUrl: `https://optimism-goerli.infura.io/v3/3e8615a3d89b49f381108b46b52f9712`,
+        pollingInterval: 56000
+      }),
+      network_id: 420,
+      confirmations: 2,
+      timeoutBlocks: 200,
+      pollingInterval: 1000,
+      skipDryRun: true,
+      from: '0x6B889Dcfad1a6ddf7dE3bC9417F5F51128efc964',
+      networkCheckTimeout: 999999
+      //websockets: true
+    },
     fastnet: {
       provider: () => new HDWalletProvider({
         privateKeys: privKeysRinkeby,
@@ -113,8 +128,9 @@ module.exports = {
     },
     base: {
       provider: () => new HDWalletProvider({
-        privateKeys: privKeysBase,
-        providerOrUrl: `https://base.org`,
+        privateKeys: privKeysRinkeby,
+        // privateKeys: privKeysBase,
+        providerOrUrl: `https://mainnet.base.org`,
         // providerOrUrl: `wss://:${infuraSecret}@goerli.infura.io/ws/v3/${infuraKey}`,
         pollingInterval: 56000
       }),
