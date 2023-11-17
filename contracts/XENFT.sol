@@ -9,13 +9,13 @@ import "@faircrypto/xen-crypto/contracts/XENCrypto.sol";
 import "@faircrypto/xen-crypto/contracts/interfaces/IBurnableToken.sol";
 import "@faircrypto/xen-crypto/contracts/interfaces/IBurnRedeemable.sol";
 import "operator-filter-registry/src/DefaultOperatorFilterer.sol";
-import "./libs/ERC2771Context.sol";
-import "./interfaces/IERC2771.sol";
+import "@faircrypto/xen-libs/contracts/ERC2771Context.sol";
+import "@faircrypto/xen-libs/contracts/interfaces/IERC2771.sol";
+import "@faircrypto/xen-libs/contracts/Array.sol";
 import "./interfaces/IXENTorrent.sol";
 import "./interfaces/IXENProxying.sol";
 import "./libs/MintInfo.sol";
 import "./libs/Metadata.sol";
-import "./libs/Array.sol";
 
 /*
 
@@ -285,8 +285,8 @@ contract XENTorrent is
     function _beforeTokenTransfer(
         address from,
         address,
-        uint256 tokenId,
-        uint256
+        uint256 tokenId
+        // uint256
     ) internal virtual override {
         if (from != address(0)) {
             uint256 maturityTs = mintInfo[tokenId].getMaturityTs();
@@ -301,8 +301,8 @@ contract XENTorrent is
     function _afterTokenTransfer(
         address from,
         address to,
-        uint256 tokenId,
-        uint256
+        uint256 tokenId
+        // uint256
     ) internal virtual override {
         _ownedTokens[from].removeItem(tokenId);
         _ownedTokens[to].addItem(tokenId);

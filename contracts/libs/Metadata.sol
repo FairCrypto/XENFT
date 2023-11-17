@@ -3,9 +3,9 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
+import "@faircrypto/xen-libs/contracts/DateTime.sol";
+import "@faircrypto/xen-libs/contracts/FormattedStrings.sol";
 import "./MintInfo.sol";
-import "./DateTime.sol";
-import "./FormattedStrings.sol";
 import "./SVG.sol";
 
 /**

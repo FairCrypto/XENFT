@@ -24,6 +24,15 @@ module.exports = {
       gasLimit: 15_000_000_000,
       //from: '0x0E4F1eB5c6c1ae7D6B7B2A8FcbCB4627644ad51E'
     },
+    mainnet: {
+      provider: () => new HDWalletProvider({
+        privateKeys: privKeysRinkeby,
+        providerOrUrl: `https://:${infuraSecret}@mainnet.infura.io/v3/${infuraKey}`,
+        //providerOrUrl: `wss://:${infuraSecret}@mainnet.infura.io/ws/v3/${infuraKey}`,
+        pollingInterval: 56000
+      }),
+      network_id: 1,
+    },
     goerli: {
       provider: () => new HDWalletProvider({
         privateKeys: privKeysRinkeby,

@@ -1,6 +1,6 @@
 {
   "name": "@faircrypto/xenft",
-  "version": "0.2.1",
+  "version": "0.5.1",
   "description": "XENFT",
   "main": "truffle-config.js",
   "directories": {
@@ -19,7 +19,8 @@
     "Bulk Minting"
   ],
   "dependencies": {
-    "@faircrypto/xen-crypto": "^0.3.2",
+    "@faircrypto/xen-crypto": "^0.6.0",
+    "@faircrypto/xen-libs": "^0.1.0",
     "@openzeppelin/contracts": "^4.7.3",
     "operator-filter-registry": "^1.3.1"
   },
